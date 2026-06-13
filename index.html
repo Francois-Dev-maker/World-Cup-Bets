@@ -21,12 +21,12 @@
   /* EN TÊTE = rose pâle */
   --c-tete:#f9a8c9;--c-tete-bg:rgba(249,168,201,0.08);--c-tete-mid:rgba(249,168,201,0.25);
   --c-attente:#f2f0ed;
-  --c-depasse:#f0a84a;--c-depasse-bg:rgba(240,168,74,0.08);
+  --c-depasse:#888880;--c-depasse-bg:rgba(136,136,128,0.08);
   --c-mort:#6a6560;--c-mort-bg:rgba(106,101,96,0.1);
   --rose:#f9a8c9;--rose-dim:rgba(249,168,201,0.1);--rose-mid:rgba(249,168,201,0.25);
   --blue:#f9a8c9;--blue-dim:rgba(249,168,201,0.08);
   --wine:#9a9590;--wine-dim:rgba(154,149,144,0.1);--wine-text:#9a9590;
-  --amber:#f0a84a;
+  --amber:#888880;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;font-weight:400;min-height:100dvh;-webkit-font-smoothing:antialiased;overflow-x:hidden;max-width:100vw;}
@@ -412,7 +412,7 @@ input:focus,select:focus{border-color:var(--rose);}
 .palier-chip.next{color:var(--c-tete);border-color:var(--c-tete-mid);background:var(--c-tete-bg)}
 .palier-chip.mort{color:var(--c-mort);border-color:var(--border);background:var(--c-mort-bg)}
 .palier-chip.mort .pk{text-decoration:line-through}
-.palier-stack{display:flex;height:4px;border-radius:99px;overflow:hidden;gap:1px;margin:7px 14px 0;background:rgba(255,255,255,.04)}
+.palier-stack{display:flex;height:6px;border-radius:99px;overflow:hidden;gap:2px;margin:7px 14px 0;background:rgba(255,255,255,.04)}
 .palier-stack>div{height:100%}
 .next-chip{color:var(--c-tete)!important;border-color:var(--c-tete-mid)!important;white-space:nowrap}
 /* ── Mini-graphs (lignes barres compactes) ── */
@@ -816,9 +816,22 @@ function palierStackM(pd){
   var tot=0;pd.levels.forEach(function(l){tot+=l.pot+l.acquis;});
   if(tot<=0)return'';
   var segs=pd.levels.map(function(l){
-    var v=l.pot+l.acquis;if(v<=0)return'';
-    var col=l.atteint?'#6ee7b7':(pd.next&&l.k===pd.next.k?'#f9a8c9':'#4a4642');
-    return'<div style="width:'+(v/tot*100).toFixed(2)+'%;background:'+col+'" title="'+l.k+'/'+l.n+' : '+Math.round(v)+'€"></div>';
+    if(l.pot+l.acquis<=0)return'';
+    var segsInner='';
+    // Acquis segment (vert menthe)
+    if(l.acquis>0){
+      segsInner+='<div style="width:'+(l.acquis/tot*100).toFixed(2)+'%;background:#6ee7b7" title="'+l.k+'/'+l.n+' acquis : '+Math.round(l.acquis)+'€"></div>';
+    }
+    // Potentiel segment
+    if(l.pot>0){
+      var col=l.mort?'#3a3a3a':l.atteint?'rgba(110,231,183,0.35)':(pd.next&&l.k===pd.next.k?'#f9a8c9':'#4a4642');
+      segsInner+='<div style="width:'+(l.pot/tot*100).toFixed(2)+'%;background:'+col+'" title="'+l.k+'/'+l.n+' potentiel : '+Math.round(l.pot)+'€"></div>';
+    }
+    // Dead level = dark
+    if(l.acquis<=0&&l.pot<=0&&l.mort){
+      segsInner+='<div style="width:2%;background:#2a2a2a"></div>';
+    }
+    return segsInner;
   }).join('');
   return'<div class="palier-stack" title="Répartition du potentiel par palier">'+segs+'</div>';
 }

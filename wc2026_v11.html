@@ -15,11 +15,11 @@
   --c-gagne:#7dd3b0;--c-gagne-bg:#0a1a13;--c-gagne-border:#1a4033;
   --c-tete:#f0a8c0;--c-tete-bg:#160a0f;--c-tete-border:#2e1220;
   --c-attente:#f0f0f0;--c-attente-bg:#111;--c-attente-border:#222;
-  --c-depasse:#888;--c-depasse-bg:#111;--c-depasse-border:#222;
+  --c-depasse:#888880;--c-depasse-bg:#111;--c-depasse-border:#222;
   --c-mort:#444;--c-mort-bg:#0e0e0e;--c-mort-border:#1a1a1a;
   /* Alias legacy */
   --rose:#f0a8c0;--rose-dim:#d4789a;--rose-bg:#160a0f;--rose-mid:#2e1220;
-  --green:#7dd3b0;--green-bg:#0a1a13;
+  --green:#6ee7b7;--green-bg:#0a1f17;
   --amber:#888;--amber-bg:#111;--amber-mid:#222;
   --red:#444;--red-bg:#0e0e0e;
   --blue:#f0a8c0;--blue-bg:#160a0f;
@@ -194,12 +194,12 @@ main{padding:20px 24px}
 .ut-list{display:flex;flex-direction:column;gap:2px}
 .ut-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border:none;border-bottom:1px solid var(--border);background:transparent;font-size:10px;gap:8px}
 /* GAGNÉ — blanc */
-.ut-row.u-finalized{background:rgba(125,211,176,.05);border-left:2px solid var(--c-gagne)}
-.ut-row.u-finalized .ut-names{color:var(--c-gagne);font-weight:600}
-.ut-row.u-finalized .ut-gain{color:var(--c-gagne);font-weight:700}
+.ut-row.u-finalized{background:rgba(110,231,183,.05);border-left:2px solid var(--green)}
+.ut-row.u-finalized .ut-names{color:var(--green);font-weight:600}
+.ut-row.u-finalized .ut-gain{color:var(--green);font-weight:700}
 .ut-row.u-win{}
-.ut-row.u-win .ut-names{color:var(--c-tete);font-weight:500}
-.ut-row.u-win .ut-gain{color:var(--c-tete);font-weight:600}
+.ut-row.u-win .ut-names{color:var(--rose);font-weight:500}
+.ut-row.u-win .ut-gain{color:var(--rose);font-weight:600}
 /* PROCHE — rose */
 .ut-row.u-close{}
 .ut-row.u-close .ut-names{color:var(--rose)}
@@ -316,47 +316,21 @@ main{padding:20px 24px}
 .palier-bars{padding:8px 4px 6px;border-top:1px solid var(--border)}
 .palier-bars-title{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
 .palier-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.palier-bar-lbl{font-size:9px;color:var(--muted2);width:28px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums}
-.palier-bar-track{flex:1;height:10px;background:rgba(255,255,255,.04);border-radius:2px;overflow:hidden;position:relative}
-.palier-bar-fill{height:100%;border-radius:2px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
-.palier-bar-val{font-size:9px;width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;color:var(--muted)}
-.palier-bar-row.atteint .palier-bar-lbl{color:var(--c-gagne)}
-.palier-bar-row.atteint .palier-bar-val{color:var(--c-gagne);font-weight:600}
-.palier-bar-row.next .palier-bar-lbl{color:var(--c-tete)}
-.palier-bar-row.next .palier-bar-val{color:var(--c-tete)}
-.palier-bar-row.mort .palier-bar-lbl{color:var(--muted);opacity:.4}
-.palier-bar-row.mort .palier-bar-val{color:var(--muted);opacity:.4}
-
-/* ── TICKET OVERLAY (fiche déployée plein écran) ── */
-.tcard-overlay{
-  position:fixed;inset:0;z-index:200;
-  display:flex;align-items:flex-start;justify-content:center;
-  background:rgba(0,0,0,.7);
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-  opacity:0;pointer-events:none;
-  transition:opacity .2s ease;
-}
+.palier-bar-lbl{font-size:9px;color:var(--muted2);width:28px;flex-shrink:0;text-align:right}
+.palier-bar-track{flex:1;height:10px;background:rgba(255,255,255,.04);border-radius:2px;overflow:hidden;display:flex}
+.palier-bar-fill{height:100%;border-radius:0;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.palier-bar-val{font-size:9px;width:52px;text-align:right;flex-shrink:0;color:var(--muted)}
+.palier-bar-row.atteint .palier-bar-lbl{color:var(--green)}
+.palier-bar-row.atteint .palier-bar-val{color:var(--green);font-weight:600}
+.palier-bar-row.next .palier-bar-lbl,.palier-bar-row.next .palier-bar-val{color:var(--rose)}
+.palier-bar-row.mort .palier-bar-lbl,.palier-bar-row.mort .palier-bar-val{opacity:.4}
+/* ── OVERLAY ── */
+.tcard-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .2s ease}
 .tcard-overlay.open{opacity:1;pointer-events:all}
-.tcard-sheet{
-  background:var(--s1);border:1px solid var(--border2);border-radius:6px;
-  width:min(900px,97vw);max-height:92vh;overflow-y:auto;
-  margin-top:32px;
-  transform:translateY(18px);
-  transition:transform .25s cubic-bezier(.2,.8,.2,1);
-  scrollbar-width:thin;
-}
+.tcard-sheet{background:var(--s1);border:1px solid var(--border2);border-radius:6px;width:min(900px,97vw);max-height:92vh;overflow-y:auto;margin-top:32px;transform:translateY(18px);transition:transform .25s cubic-bezier(.2,.8,.2,1);scrollbar-width:thin}
 .tcard-overlay.open .tcard-sheet{transform:translateY(0)}
-.tcard-sheet-head{
-  display:flex;align-items:center;gap:10px;
-  padding:14px 18px;
-  border-bottom:1px solid var(--border);
-  position:sticky;top:0;background:var(--s1);z-index:1;
-}
-.tcard-sheet-close{
-  margin-left:auto;background:none;border:1px solid var(--border2);
-  color:var(--muted);font-size:13px;padding:3px 10px;border-radius:3px;
-  cursor:pointer;transition:all .1s;
-}
+.tcard-sheet-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--s1);z-index:1}
+.tcard-sheet-close{margin-left:auto;background:none;border:1px solid var(--border2);color:var(--muted);font-size:13px;padding:3px 10px;border-radius:3px;cursor:pointer;transition:all .1s}
 .tcard-sheet-close:hover{color:var(--text);border-color:var(--muted)}
 .tcard-sheet-body{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
 .tcard-sheet-col{display:flex;flex-direction:column;gap:12px}
@@ -365,20 +339,17 @@ main{padding:20px 24px}
 .sheet-sel:last-child{border-bottom:none}
 .sheet-sel-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .sheet-sel-name{font-size:13px;font-weight:500;flex:1}
-.sheet-sel.tete .sheet-sel-name{color:var(--c-tete)}
-.sheet-sel.gagnant .sheet-sel-name{color:var(--c-gagne);font-weight:600}
+.sheet-sel.tete .sheet-sel-name{color:var(--rose)}
+.sheet-sel.gagnant .sheet-sel-name{color:var(--green);font-weight:600}
 .sheet-sel.depasse{opacity:.5}
 .sheet-sel.perdant{opacity:.3}
 .sheet-kpi-row{display:flex;gap:8px}
 .sheet-kpi{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:10px 12px}
-.sheet-kpi-n{font-size:20px;font-weight:300;line-height:1;color:var(--c-tete)}
-.sheet-kpi-n.green{color:var(--c-gagne)}
+.sheet-kpi-n{font-size:20px;font-weight:300;line-height:1;color:var(--rose)}
+.sheet-kpi-n.green{color:var(--green)}
 .sheet-kpi-n.muted{color:var(--muted2)}
-.sheet-kpi-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
-@media(max-width:600px){
-  .tcard-sheet-body{grid-template-columns:1fr}
-  .tcard-sheet{margin-top:16px;max-height:95vh}
-}
+.sheet-kpi-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+@media(max-width:600px){.tcard-sheet-body{grid-template-columns:1fr}.tcard-sheet{margin-top:16px;max-height:95vh}}
 </style>
 </head>
 <body>
@@ -387,7 +358,7 @@ main{padding:20px 24px}
   <div class="h-stats" id="hStats"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-left:12px">
     <span id="syncIndicator" style="font-size:10px;letter-spacing:.08em;color:#555">● sync</span>
-    <button onclick="refreshFromAPIFootball()" style="background:none;border:1px solid #222;color:#555;font-size:10px;letter-spacing:.08em;padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .1s" onmouseover="this.style.color='#f0a8c0';this.style.borderColor='#f0a8c0'" onmouseout="this.style.color='#555';this.style.borderColor='#222'">↻ Refresh</button>
+    <button onclick="refreshFromAPIFootball()" style="background:none;border:1px solid #222;color:#555;font-size:10px;letter-spacing:.08em;padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .1s" onmouseover="this.style.color='var(--rose)';this.style.borderColor='var(--rose)'" onmouseout="this.style.color='#555';this.style.borderColor='#222'">↻ Refresh</button>
   </div>
 </header>
 <nav>
@@ -412,7 +383,7 @@ main{padding:20px 24px}
   <div class="h-stats" id="hStats"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-left:12px">
     <span id="syncIndicator" style="font-size:10px;letter-spacing:.08em;color:#555">● sync</span>
-    <button onclick="refreshFromAPIFootball()" style="background:none;border:1px solid #222;color:#555;font-size:10px;letter-spacing:.08em;padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .1s" onmouseover="this.style.color='#f0a8c0';this.style.borderColor='#f0a8c0'" onmouseout="this.style.color='#555';this.style.borderColor='#222'">↻ Refresh</button>
+    <button onclick="refreshFromAPIFootball()" style="background:none;border:1px solid #222;color:#555;font-size:10px;letter-spacing:.08em;padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .1s" onmouseover="this.style.color='var(--rose)';this.style.borderColor='var(--rose)'" onmouseout="this.style.color='#555';this.style.borderColor='#222'">↻ Refresh</button>
   </div>
 </header>
 <nav>
@@ -519,13 +490,12 @@ var CANON_PAYS={
   'paraguay':['Paraguay','py']
 };
 function paysKeyNorm(s){return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');}
-const PAYS_3 = {"France": "FRA", "Espagne": "ESP", "Allemagne": "ALL", "Portugal": "POR", "Bresil": "BRE", "Argentine": "ARG", "Angleterre": "ANG", "Ecosse": "SCO", "Belgique": "BEL", "Pays-Bas": "PB", "Maroc": "MAR", "Senegal": "SEN", "USA": "USA", "Mexique": "MEX", "Canada": "CAN", "Japon": "JAP", "Australie": "AUS", "Suisse": "SUI", "Croatie": "CRO", "Colombie": "COL", "Equateur": "EQU", "Uruguay": "URU", "Ghana": "GHA", "Egypte": "EGY", "Algerie": "ALG", "Tunisie": "TUN", "Iran": "IRN", "Arabie Saoudite": "SAU", "Qatar": "QAT", "Curacao": "CUW", "Haiti": "HAI", "Panama": "PAN", "Suede": "SUE", "Autriche": "AUT", "Turquie": "TUR", "Tchequie": "TCH", "Bosnie": "BOS", "Jordanie": "JOR", "Irak": "IRK", "Cap-Vert": "CPV", "Cote d'Ivoire": "CIV", "Côte d'Ivoire": "CIV", "RD Congo": "COD", "Ouzbekistan": "OUZ", "Coree du Sud": "COR", "Coree": "COR", "Norvege": "NOR", "Afrique du Sud": "RSA", "Paraguay": "PAR"};
+const PAYS_3 = {"France": "FRA", "Espagne": "ESP", "Allemagne": "ALL", "Portugal": "POR", "Bresil": "BRE", "Argentine": "ARG", "Angleterre": "ANG", "Ecosse": "SCO", "Belgique": "BEL", "Pays-Bas": "PB", "Maroc": "MAR", "Senegal": "SEN", "USA": "USA", "Mexique": "MEX", "Canada": "CAN", "Japon": "JAP", "Australie": "AUS", "Suisse": "SUI", "Croatie": "CRO", "Colombie": "COL", "Equateur": "EQU", "Uruguay": "URU", "Ghana": "GHA", "Egypte": "EGY", "Algerie": "ALG", "Tunisie": "TUN", "Iran": "IRN", "Arabie Saoudite": "SAU", "Qatar": "QAT", "Curacao": "CUW", "Haiti": "HAI", "Panama": "PAN", "Suede": "SUE", "Autriche": "AUT", "Turquie": "TUR", "Tchequie": "TCH", "Bosnie": "BOS", "Jordanie": "JOR", "Irak": "IRK", "Cap-Vert": "CPV", "Cote d'Ivoire": "CIV", "Cote ivoire": "CIV", "RD Congo": "COD", "Ouzbekistan": "OUZ", "Coree du Sud": "COR", "Coree": "COR", "Norvege": "NOR", "Afrique du Sud": "RSA", "Paraguay": "PAR"};
 function pays3(p){
   if(!p)return'';
-  var k=(p||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');
-  // Direct lookup on normalized key
-  for(var key in PAYS_3){
-    var nk=key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');
+  const k=(p||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');
+  for(const key in PAYS_3){
+    const nk=key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');
     if(nk===k)return PAYS_3[key];
   }
   return p.trim().substring(0,3).toUpperCase();
@@ -541,8 +511,8 @@ function isoToEmoji(iso){
   return iso.toUpperCase().split('').map(function(c){return String.fromCodePoint(127397+c.charCodeAt(0));}).join('');
 }
 function flagHTML(pays,cls){
-  var code=pays3(pays);
-  return '<span class="cbadge">' + code + '</span>';
+  const code=pays3(pays);
+  return'<span class="cbadge">' + code + '</span>';
 }
 var ST_PRIORITY={gagnant:6,perdant:5,tete:4,exaequo:4,depasse:2,attente:1};
 function mergeStatut(a,b){if(!a)return b;if(!b)return a;return (ST_PRIORITY[b]||0)>(ST_PRIORITY[a]||0)?b:a;}
@@ -584,7 +554,7 @@ function barsHTML(items){
   }).join('');
 }
 
-const RAW = {"tickets":[{"id":"1780912418417","nom":"37k","systeme":"1/4","selections":[{"joueur":"Tahith Chong","pays":"Curaçao ","type":"buteur"},{"joueur":"Jean Duverne","pays":"Haiti","type":"buteur"},{"joueur":"Milos Degenek","pays":"Australie ","type":"buteur"},{"joueur":"Yoel Barcenas","pays":"Panama","type":"buteur"}]},{"id":"1780912568126","nom":"104k","systeme":"5/8","selections":[{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur"},{"joueur":"Semenyo","pays":"Ghana","type":"buteur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Nico williams","pays":"Espagne","type":"passeur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"}]},{"id":"1780913108621","nom":"135k","systeme":"5/7","selections":[{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Che adams","pays":"Ecosse","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Elanga","pays":"Suede ","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"}]},{"id":"1780913833293","nom":"142k","systeme":"5/7","selections":[{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Inaki williams","pays":"Ghana","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur","cote":4},{"joueur":"Leao","pays":"Portugal","type":"buteur"},{"joueur":"Mane","pays":"Senegal","type":"buteur"},{"joueur":"Neymar","pays":"Bresil","type":"buteur"}]},{"id":"1780914410391","nom":"61k","systeme":"4/7","selections":[{"joueur":"Pavel Sulc","pays":"Tchéquie ","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"David","pays":"Canada","type":"buteur"},{"joueur":"Vini","pays":"Brésil ","type":"passeur"},{"joueur":"Nico Williams","pays":"Espagne","type":"passeur"},{"joueur":"Leroy Sane","pays":"Allemagne","type":"passeur"},{"joueur":"Memphis Depay","pays":"Pays-Bas ","type":"buteur"}]},{"id":"1780915352968","nom":"11k","systeme":"5/7","selections":[{"joueur":"Che adams","pays":"Ecosse","type":"buteur"},{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Perisic","pays":"Croatie","type":"buteur"}]},{"id":"1780915476330","nom":"70k Soso","systeme":"4/6","selections":[{"joueur":"Anthony Gordon","pays":"Angleterre","type":"buteur"},{"joueur":"Santiago Gimenez","pays":"Mexique","type":"buteur"},{"joueur":"De Arrascaeta","pays":"Uruguay ","type":"buteur"},{"joueur":"Saibari","pays":"Maroc","type":"buteur"},{"joueur":"Abdul Fatawu","pays":"Ghana","type":"buteur"},{"joueur":"Oluwaseyi","pays":"Canada","type":"buteur"}]},{"id":"1780915596360","nom":"15k Soso","systeme":"3/6","selections":[{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Lukaku","pays":"Belgique","type":"buteur"},{"joueur":"Dani Olmo","pays":"Espagne","type":"buteur"},{"joueur":"Ismaila Sarr","pays":"Senegal ","type":"buteur"},{"joueur":"Kramaric","pays":"Croatie","type":"buteur"},{"joueur":"Simon Banza","pays":"RDC","type":"buteur"}]},{"id":"1780915778731","nom":"43k Soso","systeme":"3/6","selections":[{"joueur":"Vini","pays":"Brésil ","type":"buteur"},{"joueur":"Woltemade","pays":"Allemagne ","type":"buteur"},{"joueur":"Dan Ndoye","pays":"Suisse","type":"buteur"},{"joueur":"Ricardo Pepi","pays":"USA","type":"buteur"},{"joueur":"Summerville","pays":"Pays bas","type":"buteur"},{"joueur":"Evidence  Makgopa","pays":"Afrique du Sud ","type":"buteur"}]},{"id":"1780915923073","nom":"72k","systeme":"4/7","selections":[{"joueur":"Kastaneer","pays":"Curaçao ","type":"buteur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"},{"joueur":"Shomurodov","pays":"Ouzbékistan ","type":"buteur"},{"joueur":"Ismael Diaz ","pays":"Panama","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Neymar","pays":"Bresil","type":"buteur"}]},{"id":"1780916111231","nom":"41k","systeme":"6/8","selections":[{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Omar Marmoush","pays":"Egypte","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur"},{"joueur":"Nestory Irankunda","pays":"Australie","type":"buteur"},{"joueur":"Ayoub El Kaabi","pays":"Maroc","type":"buteur"}]},{"id":"1780916256285","nom":"151k","systeme":"3/7","selections":[{"joueur":"Duckens Nazon","pays":"Haiti","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Kastaneer","pays":"Curaçao ","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"}]},{"id":"1780916371909","nom":"193k","systeme":"4/7","selections":[{"joueur":"Duckens Nazon","pays":"Haiti","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Ismael Diaz ","pays":"Panama","type":"buteur"},{"joueur":"Appolis","pays":"Afrique du Sud ","type":"buteur"},{"joueur":"Gouiri","pays":"Algérie ","type":"buteur"},{"joueur":"Hwang Hee Chan","pays":"Corée du Sud ","type":"buteur"}]},{"id":"1780916589069","nom":"52k","systeme":"3/7","selections":[{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Doku","pays":"Belgique","type":"buteur"}]},{"id":"1780916704340","nom":"45k","systeme":"3/6","selections":[{"joueur":"Amir Al Ammari","pays":"Irak","type":"buteur"},{"joueur":"Nestory Irankunda","pays":"Australie","type":"buteur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"}]},{"id":"1780916791408","nom":"139k","systeme":"5/8","selections":[{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Kastaneer","pays":"Curaçao ","type":"buteur"},{"joueur":"Doku","pays":"Belgique","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur"}]},{"id":"1780916865071","nom":"1k","systeme":"3/6","selections":[{"joueur":"Olise","pays":"France","type":"passeur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Dani Olmo","pays":"Espagne","type":"passeur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Gakpo","pays":"Pays bas","type":"passeur"}]},{"id":"1780918963594","nom":"4k","systeme":"3/6","selections":[{"joueur":"Raphina","pays":"Bresil","type":"passeur"},{"joueur":"Hwang Hee Chan","pays":"Corée du Sud ","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Ayoub El Kaabi","pays":"Maroc","type":"buteur"},{"joueur":"Memphis Depay","pays":"Pays-Bas ","type":"passeur"},{"joueur":"Kramaric","pays":"Croatie","type":"buteur"}]},{"id":"1780923964154","nom":"3k","systeme":"4/6","selections":[{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Suarez","pays":"Colombie","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Nico williams","pays":"Espagne","type":"passeur"},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"passeur"}]},{"id":"1780990243085","nom":"9k","systeme":"4/6","selections":[{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Isak","pays":"Suede ","type":"buteur"},{"joueur":"Trezeguet","pays":"Egypte","type":"buteur"},{"joueur":"Gregoritsch","pays":"Autriche","type":"buteur"},{"joueur":"Jordan Ayew","pays":"Ghana","type":"buteur"}]},{"id":"1780991467595","nom":"26k","systeme":"2/5","selections":[{"joueur":"Lukic","pays":"Bosnie","type":"buteur"},{"joueur":"Cho Gue sung","pays":"Corée ","type":"buteur"},{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Semedo","pays":"Cap-Vert","type":"buteur"},{"joueur":"Waterman ","pays":"Panama","type":"buteur"}]},{"id":"1781000840739","nom":"14k","systeme":"2/5","selections":[{"joueur":"Olise","pays":"France","type":"buteur"},{"joueur":"Sorloth","pays":"Norvège ","type":"buteur"},{"joueur":"Jordy Caceido","pays":"Équateur ","type":"buteur"},{"joueur":"Frantzy Pierrot","pays":"Haiti","type":"buteur"},{"joueur":"Promise David","pays":"Canada ","type":"buteur"}]},{"id":"1781005723717","nom":"2k","systeme":"4/6","selections":[{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Mane","pays":"Senegal","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"}]},{"id":"1781005800637","nom":"2k7","systeme":"4/6","selections":[{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"}]},{"id":"1781005886695","nom":"12k","systeme":"4/6","selections":[{"joueur":"Ismael Diaz ","pays":"Panama","type":"buteur"},{"joueur":"Doku","pays":"Belgique","type":"buteur"},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Nestory Irankunda","pays":"Australie","type":"buteur"}]},{"id":"1781005943922","nom":"0.5k","systeme":"2/5","selections":[{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"}]},{"id":"1781005992395","nom":"0.7k","systeme":"2/5","selections":[{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"}]},{"id":"1781006036665","nom":"0.3k","systeme":"2/5","selections":[{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"}]},{"id":"1781006148636","nom":"0.9k","systeme":"2/5","selections":[{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"}]},{"id":"1781011024124","nom":"0.4k","systeme":"2/5","selections":[{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"}]},{"id":"1781011090634","nom":"0.6k","systeme":"2/5","selections":[{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"}]},{"id":"1781011197445","nom":"35k","systeme":"3/7","selections":[{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"}]},{"id":"1781044087642","nom":"77k77","systeme":"3/7","selections":[{"joueur":"Toure","pays":"Australie","type":"buteur"},{"joueur":"Shankland","pays":"Écosse","type":"buteur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Trezeguet","pays":"Egypte","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Sorloth","pays":"Norvège ","type":"buteur"}]},{"id":"1781200000001","nom":"289kZeBigOne","systeme":"2/9","selections":[{"joueur":"Vini","pays":"Brésil","type":"buteur","cote":3.5},{"joueur":"Olise","pays":"France","type":"buteur","cote":8},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur","cote":4},{"joueur":"Embolo","pays":"Suisse","type":"buteur","cote":3.25},{"joueur":"Balogun","pays":"USA","type":"buteur","cote":4},{"joueur":"Gakpo","pays":"Pays-Bas","type":"buteur","cote":3.5},{"joueur":"Suarez","pays":"Colombie","type":"buteur","cote":4},{"joueur":"Saka","pays":"Angleterre","type":"passeur","cote":4},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"passeur","cote":4.5}]},{"id":"1781200000002","nom":"4.5k","systeme":"3/6","selections":[{"joueur":"Olise","pays":"France","type":"buteur","cote":8},{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur","cote":3.25},{"joueur":"Embolo","pays":"Suisse","type":"buteur","cote":3.25},{"joueur":"Saibari","pays":"Maroc","type":"buteur","cote":8},{"joueur":"Saka","pays":"Angleterre","type":"passeur","cote":4},{"joueur":"Gakpo","pays":"Pays-Bas","type":"passeur","cote":5}]},{"id":"1781400000001","nom":"97k","systeme":"3/7","selections":[{"joueur":"Gakpo","pays":"Pays bas","type":"passeur"},{"joueur":"Kai Havertz","pays":"Allemagne","type":"passeur"},{"joueur":"Mbappe","pays":"France","type":"passeur"},{"joueur":"Jordan Ayew","pays":"Ghana","type":"buteur"},{"joueur":"Ante Budimir","pays":"Croatie","type":"buteur"},{"joueur":"Elye Wahi","pays":"Cote ivoire","type":"buteur"},{"joueur":"Ermedin Demirovic","pays":"Bosnie","type":"buteur"}]},{"id":"1781400000002","nom":"26k","systeme":"4/7","selections":[{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Aymen Hussein","pays":"Irak","type":"buteur"},{"joueur":"Anthony Gordon","pays":"Angleterre","type":"passeur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Kramaric","pays":"Croatie","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"}]},{"id":"1781400000003","nom":"4kNono","systeme":"3/6","selections":[{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"},{"joueur":"Bruno Fernandes","pays":"Portugal","type":"buteur"},{"joueur":"Olise","pays":"France","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Almirón","pays":"Paraguay","type":"buteur"},{"joueur":"Messi","pays":"Argentine","type":"buteur"}]}],"players":{"Raul Jimenez|Mexique|buteur":"tete","Embolo|Suisse|buteur":"attente","Akturokoglu|Turquie|buteur":"attente","Gakpo|Pays bas|buteur":"attente","Semenyo|Ghana|buteur":"attente","Saka|Angleterre|passeur":"attente","Nico williams|Espagne|passeur":"attente","Musiala|Allemagne|passeur":"attente","Gakpo|Pays-bas|buteur":"attente","Diomande|Cote ivoire|buteur":"attente","Salem Al Dawsari|Arabie Saoudite|buteur":"attente","Alvarez|Argentine|buteur":"attente","Akturkoglu|Turquie|buteur":"attente","che adams|ecosse|buteur":"attente","embolo|suisse|buteur":"attente","musiala|allemagne|passeur":"attente","edin dzeko|bosnie|buteur":"attente","kramaric|croatie|buteur":"attente","gordon|angleterre|buteur":"attente","raphina|bresil|passeur":"attente","raul jimenez|mexique|buteur":"attente","duckens nazon|haiti|buteur":"attente","alvarez|argentine|buteur":"attente","akturkoglu|turquie|buteur":"attente","gakpo|pays bas|buteur":"attente","bakambu|congo|buteur":"attente","darwin nunez|uruguay|buteur":"attente","kai havertz|allemagne|buteur":"attente","saka|angleterre|passeur":"attente","balogun|usa|buteur":"attente","ayase ueda|japon|buteur":"attente","nicolas jackson|senegal|buteur":"attente","brahim diaz|maroc|buteur":"attente","raphina|bresil|buteur":"attente","hazel mastouri|tunisie|buteur":"attente","pavel sulc|tchequie|buteur":"attente","david|canada|buteur":"attente","florian wirtz|allemagne|buteur":"attente","trezeguet|egypte|buteur":"attente","malen|pays bas|buteur":"attente","lukic|bosnie|buteur":"attente","sorloth|norvege|buteur":"attente","olise|france|passeur":"attente","gakpo|pays bas|passeur":"attente","olise|france|buteur":"attente","saibari|maroc|buteur":"attente","Gakpo|Pays bas|passeur":"attente","Kai Havertz|Allemagne|passeur":"attente","Mbappe|France|passeur":"attente","Jordan Ayew|Ghana|buteur":"attente","Ante Budimir|Croatie|buteur":"attente","Elye Wahi|Cote ivoire|buteur":"attente","Ermedin Demirovic|Bosnie|buteur":"attente","Aymen Hussein|Irak|buteur":"attente","Anthony Gordon|Angleterre|passeur":"attente","Brahim Diaz|Maroc|buteur":"attente","Malen|Pays Bas|buteur":"attente","Kramaric|Croatie|buteur":"attente","Bruno Fernandes|Portugal|buteur":"attente","Almirón|Paraguay|buteur":"attente","Messi|Argentine|buteur":"attente"}};
+const RAW = {"tickets":[{"id":"1780912418417","nom":"37k","systeme":"1/4","selections":[{"joueur":"Tahith Chong","pays":"Curaçao ","type":"buteur"},{"joueur":"Jean Duverne","pays":"Haiti","type":"buteur"},{"joueur":"Milos Degenek","pays":"Australie ","type":"buteur"},{"joueur":"Yoel Barcenas","pays":"Panama","type":"buteur"}]},{"id":"1780912568126","nom":"104k","systeme":"5/8","selections":[{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur"},{"joueur":"Semenyo","pays":"Ghana","type":"buteur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Nico williams","pays":"Espagne","type":"passeur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"}]},{"id":"1780913108621","nom":"135k","systeme":"5/7","selections":[{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Che adams","pays":"Ecosse","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Elanga","pays":"Suede ","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"}]},{"id":"1780913833293","nom":"142k","systeme":"5/7","selections":[{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Inaki williams","pays":"Ghana","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur","cote":4},{"joueur":"Leao","pays":"Portugal","type":"buteur"},{"joueur":"Mane","pays":"Senegal","type":"buteur"},{"joueur":"Neymar","pays":"Bresil","type":"buteur"}]},{"id":"1780914410391","nom":"61k","systeme":"4/7","selections":[{"joueur":"Pavel Sulc","pays":"Tchéquie ","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"David","pays":"Canada","type":"buteur"},{"joueur":"Vini","pays":"Brésil ","type":"passeur"},{"joueur":"Nico Williams","pays":"Espagne","type":"passeur"},{"joueur":"Leroy Sane","pays":"Allemagne","type":"passeur"},{"joueur":"Memphis Depay","pays":"Pays-Bas ","type":"buteur"}]},{"id":"1780915352968","nom":"11k","systeme":"5/7","selections":[{"joueur":"Che adams","pays":"Ecosse","type":"buteur"},{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Perisic","pays":"Croatie","type":"buteur"}]},{"id":"1780915476330","nom":"70k Soso","systeme":"4/6","selections":[{"joueur":"Gordon","pays":"Angleterre","type":"buteur"},{"joueur":"Santiago Gimenez","pays":"Mexique","type":"buteur"},{"joueur":"De Arrascaeta","pays":"Uruguay ","type":"buteur"},{"joueur":"Saibari","pays":"Maroc","type":"buteur"},{"joueur":"Abdul Fatawu","pays":"Ghana","type":"buteur"},{"joueur":"Oluwaseyi","pays":"Canada","type":"buteur"}]},{"id":"1780915596360","nom":"15k Soso","systeme":"3/6","selections":[{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Lukaku","pays":"Belgique","type":"buteur"},{"joueur":"Dani Olmo","pays":"Espagne","type":"buteur"},{"joueur":"Ismaila Sarr","pays":"Senegal ","type":"buteur"},{"joueur":"Kramaric","pays":"Croatie","type":"buteur"},{"joueur":"Simon Banza","pays":"RDC","type":"buteur"}]},{"id":"1780915778731","nom":"43k Soso","systeme":"3/6","selections":[{"joueur":"Vini","pays":"Brésil ","type":"buteur"},{"joueur":"Woltemade","pays":"Allemagne ","type":"buteur"},{"joueur":"Dan Ndoye","pays":"Suisse","type":"buteur"},{"joueur":"Ricardo Pepi","pays":"USA","type":"buteur"},{"joueur":"Summerville","pays":"Pays bas","type":"buteur"},{"joueur":"Evidence  Makgopa","pays":"Afrique du Sud ","type":"buteur"}]},{"id":"1780915923073","nom":"72k","systeme":"4/7","selections":[{"joueur":"Kastaneer","pays":"Curaçao ","type":"buteur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"},{"joueur":"Shomurodov","pays":"Ouzbékistan ","type":"buteur"},{"joueur":"Ismael Diaz ","pays":"Panama","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Neymar","pays":"Bresil","type":"buteur"}]},{"id":"1780916111231","nom":"41k","systeme":"6/8","selections":[{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Omar Marmoush","pays":"Egypte","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur"},{"joueur":"Nestory Irankunda","pays":"Australie","type":"buteur"},{"joueur":"Ayoub El Kaabi","pays":"Maroc","type":"buteur"}]},{"id":"1780916256285","nom":"151k","systeme":"3/7","selections":[{"joueur":"Duckens Nazon","pays":"Haiti","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Kastaneer","pays":"Curaçao ","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"}]},{"id":"1780916371909","nom":"193k","systeme":"4/7","selections":[{"joueur":"Duckens Nazon","pays":"Haiti","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Ismael Diaz ","pays":"Panama","type":"buteur"},{"joueur":"Appolis","pays":"Afrique du Sud ","type":"buteur"},{"joueur":"Gouiri","pays":"Algérie ","type":"buteur"},{"joueur":"Hwang Hee Chan","pays":"Corée du Sud ","type":"buteur"}]},{"id":"1780916589069","nom":"52k","systeme":"3/7","selections":[{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Doku","pays":"Belgique","type":"buteur"}]},{"id":"1780916704340","nom":"45k","systeme":"3/6","selections":[{"joueur":"Amir Al Ammari","pays":"Irak","type":"buteur"},{"joueur":"Nestory Irankunda","pays":"Australie","type":"buteur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"}]},{"id":"1780916791408","nom":"139k","systeme":"5/8","selections":[{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Kastaneer","pays":"Curaçao ","type":"buteur"},{"joueur":"Doku","pays":"Belgique","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur"}]},{"id":"1780916865071","nom":"1k","systeme":"3/6","selections":[{"joueur":"Olise","pays":"France","type":"passeur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Dani Olmo","pays":"Espagne","type":"passeur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Gakpo","pays":"Pays bas","type":"passeur"}]},{"id":"1780918963594","nom":"4k","systeme":"3/6","selections":[{"joueur":"Raphina","pays":"Bresil","type":"passeur"},{"joueur":"Hwang Hee Chan","pays":"Corée du Sud ","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Ayoub El Kaabi","pays":"Maroc","type":"buteur"},{"joueur":"Memphis Depay","pays":"Pays-Bas ","type":"passeur"},{"joueur":"Kramaric","pays":"Croatie","type":"buteur"}]},{"id":"1780923964154","nom":"3k","systeme":"4/6","selections":[{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Suarez","pays":"Colombie","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Nico williams","pays":"Espagne","type":"passeur"},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"passeur"}]},{"id":"1780990243085","nom":"9k","systeme":"4/6","selections":[{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Isak","pays":"Suede ","type":"buteur"},{"joueur":"Trezeguet","pays":"Egypte","type":"buteur"},{"joueur":"Gregoritsch","pays":"Autriche","type":"buteur"},{"joueur":"Ayew","pays":"Ghana","type":"buteur"}]},{"id":"1780991467595","nom":"26k","systeme":"2/5","selections":[{"joueur":"Lukic","pays":"Bosnie","type":"buteur"},{"joueur":"Cho Gue sung","pays":"Corée ","type":"buteur"},{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Semedo","pays":"Cap-Vert","type":"buteur"},{"joueur":"Waterman ","pays":"Panama","type":"buteur"}]},{"id":"1781000840739","nom":"14k","systeme":"2/5","selections":[{"joueur":"Olise","pays":"France","type":"buteur"},{"joueur":"Sorloth","pays":"Norvège ","type":"buteur"},{"joueur":"Jordy Caceido","pays":"Équateur ","type":"buteur"},{"joueur":"Frantzy Pierrot","pays":"Haiti","type":"buteur"},{"joueur":"Promise David","pays":"Canada ","type":"buteur"}]},{"id":"1781005723717","nom":"2k","systeme":"4/6","selections":[{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Mane","pays":"Senegal","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"}]},{"id":"1781005800637","nom":"2k7","systeme":"4/6","selections":[{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"}]},{"id":"1781005886695","nom":"12k","systeme":"4/6","selections":[{"joueur":"Ismael Diaz ","pays":"Panama","type":"buteur"},{"joueur":"Doku","pays":"Belgique","type":"buteur"},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Nestory Irankunda","pays":"Australie","type":"buteur"}]},{"id":"1781005943922","nom":"0.5k","systeme":"2/5","selections":[{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"}]},{"id":"1781005992395","nom":"0.7k","systeme":"2/5","selections":[{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"}]},{"id":"1781006036665","nom":"0.3k","systeme":"2/5","selections":[{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"}]},{"id":"1781006148636","nom":"0.9k","systeme":"2/5","selections":[{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"}]},{"id":"1781011024124","nom":"0.4k","systeme":"2/5","selections":[{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"}]},{"id":"1781011090634","nom":"0.6k","systeme":"2/5","selections":[{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"}]},{"id":"1781011197445","nom":"35k","systeme":"3/7","selections":[{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"}]},{"id":"1781044087642","nom":"77k77","systeme":"3/7","selections":[{"joueur":"Toure","pays":"Australie","type":"buteur"},{"joueur":"Shankland","pays":"Écosse","type":"buteur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Trezeguet","pays":"Egypte","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Sorloth","pays":"Norvège ","type":"buteur"}]},{"id":"1781200000001","nom":"289kZeBigOne","systeme":"2/9","selections":[{"joueur":"Vini","pays":"Brésil","type":"buteur","cote":3.5},{"joueur":"Olise","pays":"France","type":"buteur","cote":8},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur","cote":4},{"joueur":"Embolo","pays":"Suisse","type":"buteur","cote":3.25},{"joueur":"Balogun","pays":"USA","type":"buteur","cote":4},{"joueur":"Gakpo","pays":"Pays-Bas","type":"buteur","cote":3.5},{"joueur":"Suarez","pays":"Colombie","type":"buteur","cote":4},{"joueur":"Saka","pays":"Angleterre","type":"passeur","cote":4},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"passeur","cote":4.5}]},{"id":"1781200000002","nom":"4.5k","systeme":"3/6","selections":[{"joueur":"Olise","pays":"France","type":"buteur","cote":8},{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur","cote":3.25},{"joueur":"Embolo","pays":"Suisse","type":"buteur","cote":3.25},{"joueur":"Saibari","pays":"Maroc","type":"buteur","cote":8},{"joueur":"Saka","pays":"Angleterre","type":"passeur","cote":4},{"joueur":"Gakpo","pays":"Pays-Bas","type":"passeur","cote":5}]},{"id":"1781400000001","nom":"97k","systeme":"3/7","selections":[{"joueur":"Gakpo","pays":"Pays bas","type":"passeur"},{"joueur":"Kai Havertz","pays":"Allemagne","type":"passeur"},{"joueur":"Mbappe","pays":"France","type":"passeur"},{"joueur":"Jordan Ayew","pays":"Ghana","type":"buteur"},{"joueur":"Ante Budimir","pays":"Croatie","type":"buteur"},{"joueur":"Elye Wahi","pays":"Cote ivoire","type":"buteur"},{"joueur":"Ermedin Demirovic","pays":"Bosnie","type":"buteur"}]},{"id":"1781400000002","nom":"26k","systeme":"4/7","selections":[{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Aymen Hussein","pays":"Irak","type":"buteur"},{"joueur":"Anthony Gordon","pays":"Angleterre","type":"passeur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Kramaric","pays":"Croatie","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"}]},{"id":"1781400000003","nom":"4kNono","systeme":"3/6","selections":[{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"},{"joueur":"Bruno Fernandes","pays":"Portugal","type":"buteur"},{"joueur":"Olise","pays":"France","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Almirón","pays":"Paraguay","type":"buteur"},{"joueur":"Messi","pays":"Argentine","type":"buteur"}]}],"players":{"Raul Jimenez|Mexique|buteur":"tete","Embolo|Suisse|buteur":"attente","Akturokoglu|Turquie|buteur":"attente","Gakpo|Pays bas|buteur":"attente","Semenyo|Ghana|buteur":"attente","Saka|Angleterre|passeur":"attente","Nico williams|Espagne|passeur":"attente","Musiala|Allemagne|passeur":"attente","Gakpo|Pays-bas|buteur":"attente","Diomande|Cote ivoire|buteur":"attente","Salem Al Dawsari|Arabie Saoudite|buteur":"attente","Alvarez|Argentine|buteur":"attente","Akturkoglu|Turquie|buteur":"attente","che adams|ecosse|buteur":"attente","embolo|suisse|buteur":"attente","musiala|allemagne|passeur":"attente","edin dzeko|bosnie|buteur":"attente","kramaric|croatie|buteur":"attente","gordon|angleterre|buteur":"attente","raphina|bresil|passeur":"attente","raul jimenez|mexique|buteur":"attente","duckens nazon|haiti|buteur":"attente","alvarez|argentine|buteur":"attente","akturkoglu|turquie|buteur":"attente","gakpo|pays bas|buteur":"attente","bakambu|congo|buteur":"attente","darwin nunez|uruguay|buteur":"attente","kai havertz|allemagne|buteur":"attente","saka|angleterre|passeur":"attente","balogun|usa|buteur":"attente","ayase ueda|japon|buteur":"attente","nicolas jackson|senegal|buteur":"attente","brahim diaz|maroc|buteur":"attente","raphina|bresil|buteur":"attente","hazel mastouri|tunisie|buteur":"attente","pavel sulc|tchequie|buteur":"attente","david|canada|buteur":"attente","florian wirtz|allemagne|buteur":"attente","trezeguet|egypte|buteur":"attente","malen|pays bas|buteur":"attente","lukic|bosnie|buteur":"attente","sorloth|norvege|buteur":"attente","olise|france|passeur":"attente","gakpo|pays bas|passeur":"attente","olise|france|buteur":"attente","saibari|maroc|buteur":"attente","Gakpo|Pays bas|passeur":"attente","Kai Havertz|Allemagne|passeur":"attente","Mbappe|France|passeur":"attente","Jordan Ayew|Ghana|buteur":"attente","Ante Budimir|Croatie|buteur":"attente","Elye Wahi|Cote ivoire|buteur":"attente","Ermedin Demirovic|Bosnie|buteur":"attente","Aymen Hussein|Irak|buteur":"attente","Anthony Gordon|Angleterre|passeur":"attente","Brahim Diaz|Maroc|buteur":"attente","Malen|Pays Bas|buteur":"attente","Kramaric|Croatie|buteur":"attente","Bruno Fernandes|Portugal|buteur":"attente","Almirón|Paraguay|buteur":"attente","Messi|Argentine|buteur":"attente"}};
 
 // ── Nettoyage des données : 1 seule fiche par joueur/pays/type ──
 RAW.tickets.forEach(t=>t.selections.forEach(s=>{s.joueur=canonJoueur(s.joueur);s.pays=canonPays(s.pays);}));
@@ -643,28 +613,6 @@ function nextPalierStr(pd,short){
     :`<span class="hi">manque ${l.manque} pour le palier ${l.k}/${l.n}</span> · <span style="color:var(--c-tete)">+${fmt(l.pot)} au palier</span>`;
 }
 // Chips de paliers pour une carte ticket
-function palierBarsHTML(pd) {
-  if (!pd || !pd.levels || !pd.levels.length) return '';
-  // Max value for scale
-  const maxVal = Math.max(...pd.levels.map(l => l.pot + l.acquis), 1);
-  const rows = pd.levels.map(l => {
-    const total = l.pot + l.acquis;
-    const pct = Math.round(total / maxVal * 100);
-    const cls = l.mort ? 'mort' : l.atteint ? 'atteint' : (pd.next && l.k === pd.next.k ? 'next' : '');
-    const color = l.mort ? 'rgba(255,255,255,.08)' : l.atteint ? 'var(--c-gagne)' : (pd.next && l.k === pd.next.k ? 'var(--c-tete)' : 'rgba(255,255,255,.15)');
-    const valStr = l.mort ? '—' : (l.acquis > 0 && l.pot > 0)
-      ? `<span style="color:var(--c-gagne)">${fmt(l.acquis)}</span><span style="color:var(--muted)"> +${fmt(l.pot)}</span>`
-      : l.acquis > 0 ? `<span style="color:var(--c-gagne)">${fmt(l.acquis)}</span>`
-      : `+${fmt(l.pot)}`;
-    return `<div class="palier-bar-row ${cls}">
-      <span class="palier-bar-lbl">${l.k}/${l.n}</span>
-      <div class="palier-bar-track"><div class="palier-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      <span class="palier-bar-val">${valStr}</span>
-    </div>`;
-  }).join('');
-  return `<div class="palier-bars"><div class="palier-bars-title">Gains par palier</div>${rows}</div>`;
-}
-
 function palierChips(pd){
   return'<div class="palier-strip"><span class="palier-strip-lbl">Paliers</span>'+pd.levels.map(l=>{
     const cls=l.mort?'mort':l.atteint?'atteint':(pd.next&&l.k===pd.next.k?'next':'');
@@ -678,9 +626,14 @@ function palierStack(pd){
   let tot=0;pd.levels.forEach(l=>{tot+=l.pot+l.acquis;});
   if(tot<=0)return'';
   const segs=pd.levels.map(l=>{
-    const v=l.pot+l.acquis;if(v<=0)return'';
-    const col=l.atteint?'#d4789a':(pd.next&&l.k===pd.next.k?'#f0a8c0':'#454545');
-    return`<div style="width:${(v/tot*100).toFixed(2)}%;background:${col}" title="${l.k}/${l.n} : ${Math.round(v)}€"></div>`;
+    if(l.pot+l.acquis<=0)return'';
+    let inner='';
+    if(l.acquis>0) inner+=`<div style="width:${(l.acquis/tot*100).toFixed(2)}%;background:#6ee7b7" title="${l.k}/${l.n} acquis: ${Math.round(l.acquis)}€"></div>`;
+    if(l.pot>0){
+      const col=l.mort?'#2a2a2a':l.atteint?'rgba(110,231,183,0.3)':(pd.next&&l.k===pd.next.k?'#f9a8c9':'#454545');
+      inner+=`<div style="width:${(l.pot/tot*100).toFixed(2)}%;background:${col}" title="${l.k}/${l.n} pot: ${Math.round(l.pot)}€"></div>`;
+    }
+    return inner;
   }).join('');
   return`<div class="palier-stack" title="Répartition du potentiel par palier">${segs}</div>`;
 }
@@ -703,185 +656,18 @@ const CAT_DEFS=[
 let EXPAND_ALL=false;
 const UNIT_MISE=0.10;
 
-// ══════════════════════════════════════════════════════════
-// SUPABASE CONFIG
-// ══════════════════════════════════════════════════════════
-const SUPA_URL = 'https://lnuaeopszayqomnnjprc.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxudWFlb3BzemF5cW9tbm5qcHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzUzNjMsImV4cCI6MjA5NjkxMTM2M30.Ybd9X7lBnVBw3PbOydluhWuOdLGwb0h5vBqxN6VTiqQ';
-const SUPA_TABLE = 'player_status';
-
-// ─── Supabase client (vanilla, no deps) ───────────────────
-const supa = {
-  async fetchAll() {
-    try {
-      const r = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?select=player_key,status,updated_at,updated_by&limit=1000`, {
-        headers: {
-          'apikey': SUPA_KEY,
-          'Authorization': `Bearer ${SUPA_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (!r.ok) {
-        const txt = await r.text();
-        console.error('Supabase fetchAll error:', r.status, txt);
-        return [];
-      }
-      return r.json();
-    } catch(e) {
-      console.error('Supabase fetchAll exception:', e);
-      return [];
-    }
-  },
-  async upsert(player_key, status, updated_by = 'manual') {
-    // Use PATCH on the specific row via player_key filter (avoids 409 conflict)
-    const r = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?player_key=eq.${encodeURIComponent(player_key)}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': `Bearer ${SUPA_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ status, updated_at: new Date().toISOString(), updated_by })
-    });
-    if (r.ok) return true;
-    // If row doesn't exist yet, insert it
-    if (r.status === 404 || r.status === 0) {
-      const r2 = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPA_KEY,
-          'Authorization': `Bearer ${SUPA_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({ player_key, status, updated_at: new Date().toISOString(), updated_by })
-      });
-      return r2.ok;
-    }
-    const txt = await r.text();
-    console.error('Supabase upsert error:', r.status, txt);
-    return false;
-  },
-  async upsertBatch(rows) {
-    // PATCH each row individually
-    const results = await Promise.all(rows.map(r => this.upsert(r.player_key, r.status, r.updated_by || 'auto')));
-    return results.every(Boolean);
-  },
-  subscribeChanges(callback) {
-    // Supabase Realtime via WebSocket
-    const wsUrl = SUPA_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPA_KEY + '&vsn=1.0.0';
-    let ws, hb;
-    function connect() {
-      ws = new WebSocket(wsUrl);
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ topic: 'realtime:public:player_status', event: 'phx_join', payload: {}, ref: '1' }));
-        hb = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: '2' })), 25000);
-      };
-      ws.onmessage = e => {
-        try {
-          const msg = JSON.parse(e.data);
-          if (msg.event === 'INSERT' || msg.event === 'UPDATE') {
-            const rec = msg.payload?.record;
-            if (rec?.player_key && rec?.status) callback(rec.player_key, rec.status, rec.updated_by || 'auto');
-          }
-        } catch {}
-      };
-      ws.onclose = () => { clearInterval(hb); setTimeout(connect, 5000); };
-      ws.onerror = () => ws.close();
-    }
-    connect();
-    return () => { clearInterval(hb); ws && ws.close(); };
-  }
-};
-
-// ─── API-Football scorer auto-refresh ─────────────────────
-// Plan gratuit : 100 req/jour — on interroge uniquement les matchs terminés du jour
-const API_FOOTBALL_KEY = null; // À renseigner si tu crées un compte api-football.com
-
-async function refreshFromAPIFootball() {
-  if (!API_FOOTBALL_KEY) {
-    showToast('Clé API-Football non configurée', 'warn');
-    return false;
-  }
-  try {
-    showToast('Récupération des scores…', 'info');
-    // Récupère les matchs WC2026 du jour terminés
-    const today = new Date().toISOString().split('T')[0];
-    const r = await fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${today}&status=FT`, {
-      headers: { 'x-apisports-key': API_FOOTBALL_KEY }
-    });
-    if (!r.ok) { showToast('Erreur API-Football', 'error'); return false; }
-    const data = await r.json();
-    const fixtures = data.response || [];
-    if (!fixtures.length) { showToast('Aucun match terminé aujourd\'hui', 'info'); return false; }
-
-    // Pour chaque match, récupère les stats joueurs
-    const updates = [];
-    for (const fix of fixtures) {
-      const fid = fix.fixture.id;
-      const homeTeam = fix.teams.home.name;
-      const awayTeam = fix.teams.away.name;
-      const sr = await fetch(`https://v3.football.api-sports.io/fixtures/players?fixture=${fid}`, {
-        headers: { 'x-apisports-key': API_FOOTBALL_KEY }
-      });
-      if (!sr.ok) continue;
-      const sd = await sr.json();
-      // Calcule le meilleur buteur et passeur par équipe
-      for (const teamData of (sd.response || [])) {
-        const teamName = teamData.team.name;
-        let topScorer = null, topScoreG = 0;
-        let topAssist = null, topAssistA = 0;
-        for (const p of (teamData.players || [])) {
-          const g = p.statistics?.[0]?.goals?.total || 0;
-          const a = p.statistics?.[0]?.goals?.assists || 0;
-          if (g > topScoreG) { topScoreG = g; topScorer = p.player.name; }
-          if (a > topAssistA) { topAssistA = a; topAssist = p.player.name; }
-        }
-        updates.push({ team: teamName, scorer: topScorer, scoreG: topScoreG, assist: topAssist, assistA: topAssistA });
-      }
-    }
-    // Mappe les noms API-Football → player_keys dans notre DB
-    // (mapping approximatif par nom normalisé)
-    const allRows = await supa.fetchAll();
-    const upserts = [];
-    for (const u of updates) {
-      if (u.scorer) {
-        const norm = u.scorer.toLowerCase().split(' ').pop(); // nom de famille
-        const match = allRows.find(r => r.player_key.split('|')[0].includes(norm) && r.player_key.endsWith('buteur'));
-        if (match) upserts.push({ player_key: match.player_key, status: 'tete', updated_by: 'auto' });
-      }
-    }
-    if (upserts.length) {
-      await supa.upsertBatch(upserts);
-      showToast(`${upserts.length} joueur(s) mis à jour`, 'success');
-    } else {
-      showToast('Aucune mise à jour trouvée', 'info');
-    }
-    return true;
-  } catch(e) {
-    showToast('Erreur: ' + e.message, 'error');
-    return false;
-  }
-}
-
-
-// ══════════════════════════════════════════════════════════
-// SYNC STATE
-// ══════════════════════════════════════════════════════════
-let SUPA_LOADED = false;
-let PENDING_SAVES = {}; // player_key -> status (buffer offline)
-
 
 // ══════════════════════════════════════════════════════════
 // TICKET OVERLAY
 // ══════════════════════════════════════════════════════════
 let OVERLAY_TICKET_ID = null;
+let SHEET_FILTER_K = null;
 
 function openTicketOverlay(ticketId) {
   const t = T.find(x => x.id === ticketId);
   if (!t) return;
   OVERLAY_TICKET_ID = ticketId;
+  SHEET_FILTER_K = null;
 
   const ac = activeCount(t);
   const mk = minK(t.systeme);
@@ -890,28 +676,22 @@ function openTicketOverlay(ticketId) {
   const close = isClose(t);
   const g = ticketGains(t);
   const pd = palierData(t);
-  const [kMin, kMax] = t.systeme.split('/').map(Number);
 
-  // Header
   document.getElementById('sheetNom').textContent = t.nom;
   document.getElementById('sheetSys').textContent = t.systeme;
   const badge = document.getElementById('sheetBadge');
-  if (win) { badge.textContent = 'Gagnant'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--c-gagne-border);background:var(--c-gagne-bg);color:var(--c-gagne)'; }
-  else if (close) { badge.textContent = 'Proche'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--c-tete-border);background:var(--c-tete-bg);color:var(--c-tete)'; }
+  if (win) { badge.textContent = 'Gagnant'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--c-gagne-border);background:var(--c-gagne-bg);color:var(--green)'; }
+  else if (close) { badge.textContent = 'Proche'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--rose-mid);background:var(--rose-bg);color:var(--rose)'; }
   else { badge.textContent = 'En cours'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border2);background:var(--s2);color:var(--muted)'; }
 
-  // Build sheet content
-  const sheetEl = document.getElementById('tcardSheet');
-  
-  // ── SELECTIONS ──
-  const esc = v => v.replace(/\\/g,'\\\\').replace(/'/g, "\\'");
+  const esc = v => (v||'').replace(/\\/g,'\\\\').replace(/'/g, "\\'");
   const SLABELS = {attente:'ATT', tete:'TÊTE', gagnant:'GAG', depasse:'DEP', perdant:'PERD'};
   const sels = t.selections.map(s => {
     const st = status(s.joueur, s.pays, s.type);
-    const dotColor = st==='tete'?'var(--c-tete)':st==='gagnant'?'var(--c-gagne)':st==='depasse'?'var(--amber)':st==='perdant'?'var(--red)':'#333';
+    const dotColor = st==='tete'?'var(--rose)':st==='gagnant'?'var(--green)':st==='depasse'?'var(--muted)':st==='perdant'?'var(--red)':'#333';
     const btns = ['tete','gagnant','depasse','perdant','attente'].map(sv =>
       `<button onclick="setStatus('${esc(s.joueur)}','${esc(s.pays)}','${s.type}','${sv}');refreshOverlay('${ticketId}')"
-        style="font-size:8px;padding:2px 5px;border-radius:2px;border:1px solid ${st===sv?'var(--c-tete-border)':'var(--border2)'};background:${st===sv?'var(--c-tete-bg)':'var(--s2)'};color:${st===sv?'var(--c-tete)':'var(--muted)'};cursor:pointer;white-space:nowrap;transition:all .1s">
+        style="font-size:8px;padding:2px 5px;border-radius:2px;border:1px solid ${st===sv?'var(--rose-mid)':'var(--border2)'};background:${st===sv?'var(--rose-bg)':'var(--s2)'};color:${st===sv?(sv==='gagnant'?'var(--green)':'var(--rose)'):'var(--muted)'};cursor:pointer;white-space:nowrap">
         ${SLABELS[sv]}</button>`
     ).join('');
     return `<div class="sheet-sel ${st}">
@@ -923,28 +703,27 @@ function openTicketOverlay(ticketId) {
     </div>`;
   }).join('');
 
-  // ── PALIER BARS (cliquables) ──
   const maxVal = Math.max(...pd.levels.map(l => l.pot + l.acquis), 1);
   const bars = pd.levels.map(l => {
-    const total = l.pot + l.acquis;
-    const pct = Math.round(total / maxVal * 100);
+    const pctA = (l.acquis/maxVal*100).toFixed(1);
+    const pctP = (l.pot/maxVal*100).toFixed(1);
     const cls = l.mort ? 'mort' : l.atteint ? 'atteint' : (pd.next && l.k === pd.next.k ? 'next' : '');
-    const color = l.mort ? 'rgba(255,255,255,.08)' : l.atteint ? 'var(--c-gagne)' : (pd.next && l.k === pd.next.k ? 'var(--c-tete)' : 'rgba(255,255,255,.18)');
-    const valStr = l.mort ? '—' : (l.acquis > 0 && l.pot > 0)
-      ? `<span style="color:var(--c-gagne)">${fmt(l.acquis)}</span> <span style="color:var(--muted)">+${fmt(l.pot)}</span>`
-      : l.acquis > 0 ? `<span style="color:var(--c-gagne)">${fmt(l.acquis)}</span>`
+    const valStr = l.mort ? '—'
+      : l.acquis>0 && l.pot>0 ? `<span style="color:var(--green)">${fmt(l.acquis)}</span> <span style="color:var(--muted)">+${fmt(l.pot)}</span>`
+      : l.acquis>0 ? `<span style="color:var(--green)">${fmt(l.acquis)}</span>`
       : `+${fmt(l.pot)}`;
-    return `<div class="palier-bar-row ${cls}" onclick="filterSheetPalier(${l.k},'${ticketId}')" style="cursor:pointer;border-radius:3px;padding:2px 0;transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
+    return `<div class="palier-bar-row ${cls}" onclick="filterSheetPalier(${l.k},'${ticketId}')" style="cursor:pointer;border-radius:3px;padding:2px 0" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
       <span class="palier-bar-lbl">${l.k}/${l.n}</span>
-      <div class="palier-bar-track"><div class="palier-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="palier-bar-track">
+        ${l.acquis>0?`<div class="palier-bar-fill" style="width:${pctA}%;background:#6ee7b7;display:inline-block;height:100%"></div>`:''}
+        ${l.pot>0?`<div class="palier-bar-fill" style="width:${pctP}%;background:${l.mort?'#2a2a2a':l.atteint?'rgba(110,231,183,.3)':cls==='next'?'var(--rose)':'#454545'};display:inline-block;height:100%"></div>`:''}
+      </div>
       <span class="palier-bar-val">${valStr}</span>
     </div>`;
   }).join('');
 
-  // ── COMBOS (all paliers initially) ──
   const combosHTML = buildSheetCombos(t, null);
 
-  // ── ASSEMBLE ──
   document.getElementById('sheetLeft').innerHTML = `
     <div class="tcard-sheet-section">Sélections · ${ac}/${n} actifs · seuil ${mk}</div>
     ${sels}
@@ -955,203 +734,196 @@ function openTicketOverlay(ticketId) {
       <div class="sheet-kpi"><div class="sheet-kpi-n muted">${fmt(g.mise)}</div><div class="sheet-kpi-l">Misé</div></div>
     </div>
   `;
-
   document.getElementById('sheetRight').innerHTML = `
     <div class="tcard-sheet-section">Gains par palier <span style="font-size:9px;color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none">· clic pour filtrer</span></div>
     <div class="palier-bars" style="padding:0">${bars}</div>
     <div class="tcard-sheet-section" style="margin-top:16px" id="sheetCombosTitle">Paris unitaires · tous paliers</div>
     <div id="sheetCombos" style="max-height:340px;overflow-y:auto">${combosHTML}</div>
   `;
-
-  // Open
-  const overlay = document.getElementById('tcardOverlay');
-  overlay.classList.add('open');
+  document.getElementById('tcardOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 function buildSheetCombos(t, filterK) {
   const combos = getDeployedCombos(t);
-  const [kMin] = t.systeme.split('/').map(Number);
-  const statusColors = {gagnant:'var(--c-gagne)',tete:'var(--c-tete)',attente:'var(--muted2)',depasse:'var(--muted)',perdant:'var(--c-mort)'};
   const filtered = filterK ? combos.filter(c => c.k === filterK) : combos;
-  
-  // Group by k
   const groups = {};
   filtered.forEach(({k, sels}) => { if(!groups[k]) groups[k]=[]; groups[k].push(sels); });
-
   let html = '';
   for (const k of Object.keys(groups).sort((a,b) => +a - +b)) {
     const g = groups[k];
-    let levelAcq = 0, levelPot = 0, levelMort = 0;
-    // Sort combos by gain descending (dead last)
-    g.sort((a, b) => {
-      const ga = comboGainTotal(a) || 0;
-      const gb = comboGainTotal(b) || 0;
-      const da = comboStatus(a) === 'dead';
-      const db = comboStatus(b) === 'dead';
-      if (da !== db) return da ? 1 : -1;
-      return gb - ga;
-    });
+    g.sort((a,b)=>{const ga=comboGainTotal(a)||0,gb=comboGainTotal(b)||0,da=comboStatus(a)==='dead',db=comboStatus(b)==='dead';if(da!==db)return da?1:-1;return gb-ga;});
+    let levelAcq=0,levelPot=0,levelMort=0;
     const rows = g.map(sels => {
       const cs = comboStatus(sels);
       const gt = comboGainTotal(sels);
-      if (cs === 'dead') { levelMort++; return null; }
-      if (gt) { if(cs==='finalized') levelAcq+=gt; else if(cs!=='dead') levelPot+=gt; }
+      if (cs==='dead'){levelMort++;return null;}
+      if(gt){if(cs==='finalized')levelAcq+=gt;else levelPot+=gt;}
       const names = sels.map(s => {
         const st = status(s.joueur, s.pays, s.type);
-        const col = statusColors[st] || 'var(--muted2)';
-        const bold = st==='tete'||st==='gagnant' ? 'font-weight:600;' : '';
-        const deco = st==='perdant' ? 'text-decoration:line-through;' : '';
-        const check = st==='gagnant' ? '✓ ' : '';
+        const col = st==='tete'?'var(--rose)':st==='gagnant'?'var(--green)':st==='depasse'?'var(--muted)':st==='perdant'?'var(--red)':'var(--muted2)';
+        const bold = st==='tete'||st==='gagnant'?'font-weight:600;':'';
+        const deco = st==='perdant'?'text-decoration:line-through;':'';
+        const check = st==='gagnant'?'✓ ':'';
         return `<span style="color:${col};${bold}${deco}">${check}${s.joueur.split(' ')[0]}</span>`;
       }).join('<span style="color:var(--muted)"> · </span>');
-      const gainChip = gt ? (cs==='finalized'?`<span style="color:var(--c-gagne);font-weight:700">${fmt(gt)}</span>`:fmt(gt)) : '—';
-      const rowCls = cs==='finalized'?'u-finalized':cs==='win'?'u-win':cs==='close'?'u-close':cs==='live'?'u-live':cs==='dead'?'u-dead':'';
-      return `<div class="ut-row ${rowCls}">
-        <span class="ut-names">${names}</span>
-        <span class="ut-gain">${gainChip}</span>
-      </div>`;
+      const gainChip = gt ? (cs==='finalized'?`<span style="color:var(--green);font-weight:700">${fmt(gt)}</span>`:fmt(gt)) : '—';
+      const rowCls = cs==='finalized'?'u-finalized':cs==='win'?'u-win':cs==='close'?'u-close':cs==='live'?'u-live':'';
+      return `<div class="ut-row ${rowCls}"><span class="ut-names">${names}</span><span class="ut-gain">${gainChip}</span></div>`;
     }).filter(Boolean).join('');
-
-    const allDead = levelMort === g.length;
-    const levelInfo = allDead ? `<span style="color:var(--red)">palier mort</span>`
-      : levelAcq > 0 ? `<span style="color:var(--c-gagne)">${fmt(levelAcq)}</span>`
-      : levelPot > 0 ? `<span style="color:var(--muted2)">${fmt(levelPot)}</span>` : '';
-
+    const allDead = levelMort===g.length;
+    const levelInfo = allDead?`<span style="color:var(--red)">palier mort</span>`
+      :levelAcq>0?`<span style="color:var(--green)">${fmt(levelAcq)}</span>`
+      :levelPot>0?`<span style="color:var(--muted2)">${fmt(levelPot)}</span>`:'';
     html += `<div style="margin-bottom:8px">
       <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span>${k} sél.</span>
-        <span style="color:var(--muted)">${g.length} combinaisons</span>
-        <span style="margin-left:auto">${levelInfo}</span>
+        <span>${k} sél.</span><span style="color:var(--muted)">${g.length} combinaisons</span><span style="margin-left:auto">${levelInfo}</span>
       </div>
-      <div class="ut-list">${rows || '<span style="font-size:9px;color:var(--muted)">Tout mort</span>'}</div>
+      <div class="ut-list">${rows||'<span style="font-size:9px;color:var(--muted)">Tout mort</span>'}</div>
     </div>`;
   }
-  return html || '<div class="empty">Aucune combinaison</div>';
+  return html||'<div class="empty">Aucune combinaison</div>';
 }
 
-let SHEET_FILTER_K = null;
 function filterSheetPalier(k, ticketId) {
   const t = T.find(x => x.id === ticketId);
   if (!t) return;
-  // Toggle filter
-  SHEET_FILTER_K = SHEET_FILTER_K === k ? null : k;
+  SHEET_FILTER_K = SHEET_FILTER_K===k ? null : k;
   const label = SHEET_FILTER_K ? `Paris unitaires · palier ${SHEET_FILTER_K}/${t.systeme.split('/')[1]}` : 'Paris unitaires · tous paliers';
   document.getElementById('sheetCombosTitle').textContent = label;
   document.getElementById('sheetCombos').innerHTML = buildSheetCombos(t, SHEET_FILTER_K);
-  // Highlight active bar
   document.querySelectorAll('.palier-bar-row').forEach(row => {
     const lbl = row.querySelector('.palier-bar-lbl');
-    if (lbl) {
-      const rowK = parseInt(lbl.textContent);
-      row.style.outline = (SHEET_FILTER_K && rowK === SHEET_FILTER_K) ? '1px solid var(--c-tete)' : '';
-    }
+    if (lbl) row.style.outline = (SHEET_FILTER_K && parseInt(lbl.textContent)===SHEET_FILTER_K) ? '1px solid var(--rose)' : '';
   });
 }
 
-function refreshOverlay(ticketId) {
-  // Re-render the overlay after a status change
-  setTimeout(() => openTicketOverlay(ticketId), 50);
-}
+function refreshOverlay(ticketId) { setTimeout(() => openTicketOverlay(ticketId), 50); }
 
 function closeTicketOverlay(e) {
   if (e && e.target !== document.getElementById('tcardOverlay') && !e.target.classList.contains('tcard-sheet-close')) return;
-  const overlay = document.getElementById('tcardOverlay');
-  overlay.classList.remove('open');
+  document.getElementById('tcardOverlay').classList.remove('open');
   document.body.style.overflow = '';
   OVERLAY_TICKET_ID = null;
   SHEET_FILTER_K = null;
 }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeTicketOverlay({target:document.getElementById('tcardOverlay')}); });
 
-// Close on Escape
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTicketOverlay({target: document.getElementById('tcardOverlay')}); });
+// ── SUPABASE ──────────────────────────────────────────────
+const SUPA_URL = 'https://lnuaeopszayqomnnjprc.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxudWFlb3BzemF5cW9tbm5qcHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzUzNjMsImV4cCI6MjA5NjkxMTM2M30.Ybd9X7lBnVBw3PbOydluhWuOdLGwb0h5vBqxN6VTiqQ';
+const SUPA_TABLE = 'player_status';
+let SUPA_LOADED = false;
 
-function init(){
-  const reKey=k=>{const parts=String(k).split('|');if(parts.length<3)return null;return pkey(parts[0],parts[1],parts[2]);};
-  const collapse=obj=>{const out={};for(const[k,v]of Object.entries(obj||{})){const nk=reKey(k);if(nk)out[nk]=mergeStatut(out[nk],v);}return out;};
-  const base=collapse(RAW.players);
-  const saved=(()=>{try{return JSON.parse(localStorage.getItem('wc26_v4')||'{}');}catch{return{};}})();
-  P={...base,...collapse(saved)};
-  render();
-  // Load from Supabase (overrides local)
-  loadFromSupabase();
-  // Subscribe to realtime changes
-  supa.subscribeChanges((player_key, status, by) => {
-    P[player_key] = status;
-    localStorage.setItem('wc26_v4', JSON.stringify(P));
-    render();
-    if(by === 'auto') showSyncToast('Mise à jour auto: ' + player_key.split('|')[0]);
-  });
-}
+const supa = {
+  async fetchAll() {
+    try {
+      const r = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?select=player_key,status&limit=1000`, {
+        headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+      });
+      if(!r.ok){ console.error('supa',r.status); return []; }
+      return r.json();
+    } catch(e){ console.error('supa',e); return []; }
+  },
+  async upsert(player_key, status, updated_by='manual') {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?player_key=eq.${encodeURIComponent(player_key)}`, {
+      method:'PATCH',
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({status,updated_at:new Date().toISOString(),updated_by})
+    });
+    return r.ok;
+  },
+  subscribeChanges(callback) {
+    const wsUrl = SUPA_URL.replace('https://','wss://') + '/realtime/v1/websocket?apikey=' + SUPA_KEY + '&vsn=1.0.0';
+    let ws, hb;
+    function connect() {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        ws.send(JSON.stringify({topic:'realtime:public:player_status',event:'phx_join',payload:{},ref:'1'}));
+        hb = setInterval(() => ws.readyState===1 && ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'2'})), 25000);
+      };
+      ws.onmessage = e => {
+        try {
+          const msg = JSON.parse(e.data);
+          if(msg.event==='INSERT'||msg.event==='UPDATE'){
+            const rec = msg.payload?.record;
+            if(rec?.player_key&&rec?.status) callback(rec.player_key,rec.status,rec.updated_by||'auto');
+          }
+        } catch{}
+      };
+      ws.onclose = () => { clearInterval(hb); setTimeout(connect,5000); };
+      ws.onerror = () => ws.close();
+    }
+    connect();
+  }
+};
 
 async function loadFromSupabase() {
   try {
-    console.log('Loading from Supabase...');
     const rows = await supa.fetchAll();
-    console.log('Supabase rows:', rows ? rows.length : 'null');
-    if(!rows || !rows.length) {
-      console.warn('No rows returned from Supabase');
-      updateSyncIndicator(false);
-      return;
-    }
-    rows.forEach(r => { if(r.player_key && r.status) P[r.player_key] = r.status; });
+    if(!rows?.length){ updateSyncIndicator(false); return; }
+    rows.forEach(r => { if(r.player_key&&r.status) P[r.player_key]=r.status; });
     localStorage.setItem('wc26_v4', JSON.stringify(P));
     SUPA_LOADED = true;
     render();
     updateSyncIndicator(true);
-  } catch(e) {
-    console.error('loadFromSupabase error:', e);
-    updateSyncIndicator(false);
-  }
+  } catch(e){ updateSyncIndicator(false); }
 }
 
 async function save(player_key, status) {
-  // Save to localStorage immediately
   localStorage.setItem('wc26_v4', JSON.stringify(P));
-  // Push to Supabase
   const ok = await supa.upsert(player_key, status, 'manual');
-  if(!ok) {
-    PENDING_SAVES[player_key] = status;
-    updateSyncIndicator(false);
-  } else {
-    delete PENDING_SAVES[player_key];
-    updateSyncIndicator(true);
-  }
+  updateSyncIndicator(ok);
 }
 
 function updateSyncIndicator(ok) {
   const el = document.getElementById('syncIndicator');
   if(!el) return;
   el.textContent = ok ? '● sync' : '● offline';
-  el.style.color = ok ? '#7dd3b0' : '#888';
+  el.style.color = ok ? 'var(--green)' : '#555';
 }
-
 function showSyncToast(msg) {
   const d = document.createElement('div');
-  d.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #2a2a2a;color:#7dd3b0;font-size:11px;padding:6px 14px;border-radius:4px;z-index:9999;pointer-events:none';
+  d.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #222;color:var(--green);font-size:11px;padding:6px 14px;border-radius:4px;z-index:9999;pointer-events:none';
   d.textContent = msg;
   document.body.appendChild(d);
   setTimeout(() => d.remove(), 3000);
 }
-
 function showToast(msg, type) {
-  const colors = {success:'#7dd3b0', warn:'#f0a8c0', error:'#f87171', info:'#888'};
+  const colors = {success:'var(--green)',warn:'var(--rose)',error:'var(--red)',info:'#888'};
   const d = document.createElement('div');
-  d.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #2a2a2a;color:${colors[type]||'#ccc'};font-size:11px;padding:6px 14px;border-radius:4px;z-index:9999;pointer-events:none`;
+  d.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #222;color:${colors[type]||'#ccc'};font-size:11px;padding:6px 14px;border-radius:4px;z-index:9999;pointer-events:none`;
   d.textContent = msg;
   document.body.appendChild(d);
   setTimeout(() => d.remove(), 3000);
 }
+async function refreshFromAPIFootball() { showToast('Clé API-Football non configurée', 'warn'); }
 
+function init(){
+  // Re-clé toutes les entrées (anciennes clés avec accents/variantes) vers la clé canonique,
+  // en fusionnant les statuts par priorité (gagnant > perdant > tete > depasse > attente)
+  const reKey=k=>{const parts=String(k).split('|');if(parts.length<3)return null;return pkey(parts[0],parts[1],parts[2]);};
+  const collapse=obj=>{const out={};for(const[k,v]of Object.entries(obj||{})){const nk=reKey(k);if(nk)out[nk]=mergeStatut(out[nk],v);}return out;};
+  const base=collapse(RAW.players);
+  const saved=(()=>{try{return JSON.parse(localStorage.getItem('wc26_v4')||'{}');}catch{return{};}})();
+  // La sauvegarde locale (modifs de l'utilisateur) écrase la graine embarquée
+  P={...base,...collapse(saved)};
+  render();
+  loadFromSupabase();
+  supa.subscribeChanges((pk,st,by)=>{
+    P[pk]=st;
+    localStorage.setItem('wc26_v4',JSON.stringify(P));
+    render();
+    if(by==='auto')showSyncToast('Auto: '+pk.split('|')[0]);
+  });
+}
 function pkey(j,p,t){return paysKeyNorm(j)+'|'+paysKeyNorm(canonPays(p))+'|'+(t||'').trim().toLowerCase();}
 function status(j,p,t){const k=pkey(j,p,t);if(P[k])return P[k];const n=paysKeyNorm(j),tp=(t||'').trim().toLowerCase();for(const[key,v]of Object.entries(P)){const parts=key.split('|');if(parts[0]===n&&parts[2]===tp)return v;}return'attente';}
 function setStatus(j,p,t,s){
-  const k=pkey(j,p,t);
-  P[k]=s;
+  const k=pkey(j,p,t);P[k]=s;
   const n=paysKeyNorm(j),tp=(t||'').trim().toLowerCase();
   for(const key of Object.keys(P)){const parts=key.split('|');if(parts[0]===n&&parts[2]===tp)P[key]=s;}
-  save(k, s);
-  render();
+  save(k,s);render();
 }
 function activeCount(t){return t.selections.filter(s=>['tete','gagnant'].includes(status(s.joueur,s.pays,s.type))).length;}
 function finalizedCount(t){return t.selections.filter(s=>status(s.joueur,s.pays,s.type)==='gagnant').length;}
@@ -1341,7 +1113,7 @@ function renderDash(){
     const c=getCote(p.joueur);
     return`<div class="tete-pill ${st==='gagnant'?'gagnant-pill':''}" onclick="goToPlayer('${p.joueur}')" style="cursor:pointer;user-select:none">
       <div class="tete-pill-name">${p.joueur}${c?` <span class="pill-cote">×${c}</span>`:''}</div>
-      <div class="tete-pill-sub">${pays3(p.pays)} · ${p.type} · ${nt}T · <span style="color:${st==='gagnant'?'var(--green)':'var(--rose)'}">${LABELS[st]}</span></div>
+      <div class="tete-pill-sub">${p.pays} · ${p.type} · ${nt}T · <span style="color:${st==='gagnant'?'var(--green)':'var(--rose)'}">${LABELS[st]}</span></div>
     </div>`;
   }).join(''):'<div class="empty">Aucun joueur actif</div>';
 
@@ -1350,14 +1122,12 @@ function renderDash(){
     const names=t.selections.filter(s=>['tete','gagnant'].includes(status(s.joueur,s.pays,s.type))).map(s=>s.joueur).join(', ');
     const{acquis:ga,potentiel:gp}=ticketGains(t);
     const pd=palierData(t);
-    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${ga>0?'var(--c-gagne-light)':'var(--c-tete)'}">${ga>0?fmt(ga)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
+    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${ga>0?'var(--green)':'var(--rose)'}">${ga>0?fmt(ga)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
     const nextStr=nextPalierStr(pd,false);
     const totalStr=ga>0&&gp>0
-  ? `<span style="font-size:10px"> · <span style="color:var(--c-gagne)">${fmt(ga)} acquis</span> <span style="color:var(--muted)">+</span> <span style="color:var(--c-tete)">${fmt(gp)} potentiel</span></span>`
-  : ga>0
-  ? `<span style="font-size:10px"> · <span style="color:var(--c-gagne)">${fmt(ga)} acquis</span></span>`
-  : gp>0
-  ? `<span style="font-size:10px"> · <span style="color:var(--c-tete)">+${fmt(gp)} potentiel</span></span>`
+  ? `<span style="font-size:10px"> · <span style="color:var(--green)">${fmt(ga)} acquis</span> <span style="color:var(--muted)">+</span> <span style="color:var(--rose)">${fmt(gp)} potentiel</span></span>`
+  : ga>0 ? `<span style="font-size:10px"> · <span style="color:var(--green)">${fmt(ga)} acquis</span></span>`
+  : gp>0 ? `<span style="font-size:10px"> · <span style="color:var(--rose)">+${fmt(gp)} potentiel</span></span>`
   : '';
     return`<div class="alert ${win?'win':'close'}" onclick="openTicketOverlay('${t.id}')" style="cursor:pointer">
       <strong>${t.nom}</strong> <span style="color:var(--muted)">${t.systeme}</span>
@@ -1484,7 +1254,7 @@ function renderJoueurs(){
         <div class="pcard-count ${p.n>=4?'hi':''}">${p.n}×</div>
       </div>
       <div class="pcard-meta">
-        <span>${pays3(p.pays)}</span>
+        <span>${p.pays}</span>
         <span class="tbadge ${p.type}">${p.type}</span>
         ${c?`<span class="cote-badge">×${c}</span>`:''}
       </div>
@@ -1678,7 +1448,7 @@ function renderTickets(){
 
     const topCls=allDead?'is-dead':win?'has-win':ac>0?'has-tete':'';
     return`<div class="tcard ${topCls}">
-      <div class="tcard-head" onclick="openTicketOverlay('${t.id}')" style="cursor:pointer">
+      <div class="tcard-head" onclick="toggleDeploy('${t.id}',event)">
         <span class="tcard-nom">${t.nom}</span>
         <span class="tcard-sys">${t.systeme}</span>
         <div class="tcard-prog">
@@ -1687,20 +1457,19 @@ function renderTickets(){
         </div>
         ${gainHead}
         ${maxNomHtml}
-        <span class="tcard-expand-icon" style="color:var(--muted);font-size:9px">▶</span>
+        <span class="tcard-expand-icon">${DEPLOY_STATE[t.id]?'▼':'▶'}</span>
       </div>
-      <div class="tcard-body">
-        <div style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 4px">
-          ${t.selections.map(s=>{const st=status(s.joueur,s.pays,s.type);const dot=st==='tete'?'var(--c-tete)':st==='gagnant'?'var(--c-gagne)':st==='depasse'?'var(--amber)':st==='perdant'?'var(--red)':'#333';return`<span title="${s.joueur} · ${s.pays}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${st==='tete'||st==='gagnant'?'var(--text)':'var(--muted)'};padding:2px 6px;background:var(--s2);border-radius:3px;border:1px solid ${st==='tete'?'var(--c-tete-border)':st==='gagnant'?'var(--c-gagne-border)':'var(--border)'}"><span style="width:5px;height:5px;border-radius:50%;background:${dot};flex-shrink:0;display:inline-block"></span>${s.joueur}</span>`;}).join('')}
-        </div>
-      </div>
-      ${allDead?'':palierBarsHTML(pd)}
+      ${palierStack(pd)}
+      <div class="tcard-body">${sels}</div>
+      ${allDead?'':palierChips(pd)}
+      ${buildProbaStrip(t)}
       <div class="tcard-foot">
         <span class="tcard-info">${ac} actifs · seuil ${mk}${nbMort>0?` · <span style="color:var(--red)">${nbMort} mort${nbMort>1?'s':''}</span>`:''}</span>
         ${badge}
         <span class="tcard-unitaires">${nbU} unit.</span>
         <span class="tcard-mise">${fmt(mise)}</span>
       </div>
+      ${buildDeployedSection(t)}
     </div>`;
   }).join(''):'<div class="empty">Aucun ticket</div>';
 
@@ -1743,7 +1512,7 @@ function renderAlertes(){
     const waitNames=t.selections.filter(s=>status(s.joueur,s.pays,s.type)==='attente').map(s=>s.joueur).join(', ');
     const{acquis:ga,potentiel:gp}=ticketGains(t);
     const pd=palierData(t);
-    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${ga>0?'var(--c-gagne-light)':'var(--c-tete)'}">${ga>0?fmt(ga)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
+    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${ga>0?'var(--green)':'var(--rose)'}">${ga>0?fmt(ga)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
     const nextStr=nextPalierStr(pd,false);
     return`<div class="alert ${win?'win':'close'}" onclick="openTicketOverlay('${t.id}')" style="cursor:pointer">
       <strong>${t.nom}</strong> <span style="color:${'var(--muted)'}">${t.systeme}</span>
@@ -1767,7 +1536,7 @@ function renderAlertes(){
     pairs.sort((x,y)=>x.shared.length-y.shared.length);
     isoRows=pairs.map(p=>{
       const cls=p.shared.length===0?'warn':p.shared.length===1?'close':'';
-      return`<div class="alert ${cls}" style="cursor:default">
+      return`<div class="alert ${cls}">
         <strong>${p.a.joueur}</strong> + <strong>${p.b.joueur}</strong>
         &nbsp;·&nbsp; ${p.shared.length} ticket${p.shared.length!==1?'s':''} commun${p.shared.length!==1?'s':''}
         <br><span style="font-size:10px;color:var(--muted)">${p.shared.map(t=>t.nom).join(', ')||'aucun'}</span>
