@@ -1762,6 +1762,14 @@ function buildMobileCombos(ticket, filterK) {
     if (filterK && k !== filterK) continue;
     var combos = combinations(ticket.selections, k);
     var levelAcq = 0, levelPot = 0, levelMort = 0;
+    // Sort by gain descending, dead last
+    combos.sort(function(a, b) {
+      var ga = comboGainTotal(a) || 0;
+      var gb = comboGainTotal(b) || 0;
+      var da = comboIsDead(a), db = comboIsDead(b);
+      if (da !== db) return da ? 1 : -1;
+      return gb - ga;
+    });
     var rows = [];
     combos.forEach(function(sels) {
       var isDd = comboIsDead(sels), isFin = !isDd && comboIsFinalized(sels);

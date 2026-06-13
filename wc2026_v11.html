@@ -980,6 +980,15 @@ function buildSheetCombos(t, filterK) {
   for (const k of Object.keys(groups).sort((a,b) => +a - +b)) {
     const g = groups[k];
     let levelAcq = 0, levelPot = 0, levelMort = 0;
+    // Sort combos by gain descending (dead last)
+    g.sort((a, b) => {
+      const ga = comboGainTotal(a) || 0;
+      const gb = comboGainTotal(b) || 0;
+      const da = comboStatus(a) === 'dead';
+      const db = comboStatus(b) === 'dead';
+      if (da !== db) return da ? 1 : -1;
+      return gb - ga;
+    });
     const rows = g.map(sels => {
       const cs = comboStatus(sels);
       const gt = comboGainTotal(sels);
