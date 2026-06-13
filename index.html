@@ -346,7 +346,7 @@ input:focus,select:focus{border-color:var(--rose);}
 .combo-chip-row.ch-win .combo-chip-names{color:var(--c-gagne-light);font-weight:500;}
 .combo-chip-row.ch-win .combo-chip-gain{color:var(--c-gagne-light);font-weight:700;}
 .combo-chip-row.ch-tete .combo-chip-names{color:var(--c-tete);}
-.combo-chip-row.ch-tete .combo-chip-gain{color:var(--c-tete);font-weight:600;}
+.combo-chip-row.ch-tete .combo-chip-gain{color:var(--c-tete);font-weight:500;}
 .combo-chip-row.ch-dead{opacity:.35;}
 .combo-chip-row.ch-dead .combo-chip-names{text-decoration:line-through;}
 /* Stat card */
@@ -856,7 +856,7 @@ function buildDeployedMobile(ticket,isOpen,deployId){
       var g=comboGainTotal(sels);
       if(g&&!isDd){if(isFin)levelAcquis+=g;else levelPot+=g;}
       var names=sels.map(function(s){return s.joueur.split(' ')[0];}).join(' · ');
-      var gainStr=isDd?'mort':g?fmtEur(g):'—';
+      var gainStr=isDd?'<span style="color:var(--c-mort)">mort</span>':g?(isFin?'<span style="color:var(--c-gagne-light);font-weight:700">'+fmtEur(g)+'</span>':fmtEur(g)):'—';
       var cls=isDd?'ch-dead':isFin?'ch-win':isWn?'ch-tete':isCl?'ch-close':'';
       return '<div class="combo-chip-row '+cls+'"><span class="combo-chip-names">'+names+'</span><span class="combo-chip-gain">'+gainStr+'</span></div>';
     }).join('');
@@ -1777,7 +1777,7 @@ function buildMobileCombos(ticket, filterK) {
       var isWn = !isDd && !isFin && comboIsWon(sels), isCl = !isDd && !isFin && !isWn && comboIsClose(sels);
       if (isDd) { levelMort++; return; }
       var g = comboGainTotal(sels);
-      if (g) { if (isFin) levelAcq += g; else levelPot += g; }
+      if (g) { if (isFin) levelAcq += g; else if (!isDd) levelPot += g; }
       var names = sels.map(function(s) {
         var st = getPSt(s.joueur, s.pays, s.type);
         var col = statusColors[st] || 'var(--muted2)';

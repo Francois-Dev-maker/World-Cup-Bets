@@ -194,9 +194,12 @@ main{padding:20px 24px}
 .ut-list{display:flex;flex-direction:column;gap:2px}
 .ut-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border:none;border-bottom:1px solid var(--border);background:transparent;font-size:10px;gap:8px}
 /* GAGNÉ — blanc */
+.ut-row.u-finalized{background:rgba(125,211,176,.05);border-left:2px solid var(--c-gagne)}
+.ut-row.u-finalized .ut-names{color:var(--c-gagne);font-weight:600}
+.ut-row.u-finalized .ut-gain{color:var(--c-gagne);font-weight:700}
 .ut-row.u-win{}
-.ut-row.u-win .ut-names{color:var(--c-gagne);font-weight:500}
-.ut-row.u-win .ut-gain{color:var(--c-gagne);font-weight:700}
+.ut-row.u-win .ut-names{color:var(--c-tete);font-weight:500}
+.ut-row.u-win .ut-gain{color:var(--c-tete);font-weight:600}
 /* PROCHE — rose */
 .ut-row.u-close{}
 .ut-row.u-close .ut-names{color:var(--rose)}
@@ -993,7 +996,7 @@ function buildSheetCombos(t, filterK) {
       const cs = comboStatus(sels);
       const gt = comboGainTotal(sels);
       if (cs === 'dead') { levelMort++; return null; }
-      if (gt) { if(cs==='win') levelAcq+=gt; else levelPot+=gt; }
+      if (gt) { if(cs==='finalized') levelAcq+=gt; else if(cs!=='dead') levelPot+=gt; }
       const names = sels.map(s => {
         const st = status(s.joueur, s.pays, s.type);
         const col = statusColors[st] || 'var(--muted2)';
@@ -1002,8 +1005,8 @@ function buildSheetCombos(t, filterK) {
         const check = st==='gagnant' ? '✓ ' : '';
         return `<span style="color:${col};${bold}${deco}">${check}${s.joueur.split(' ')[0]}</span>`;
       }).join('<span style="color:var(--muted)"> · </span>');
-      const gainChip = gt ? fmt(gt) : '—';
-      const rowCls = cs==='win'?'u-win':cs==='close'?'u-close':cs==='live'?'u-live':'';
+      const gainChip = gt ? (cs==='finalized'?`<span style="color:var(--c-gagne);font-weight:700">${fmt(gt)}</span>`:fmt(gt)) : '—';
+      const rowCls = cs==='finalized'?'u-finalized':cs==='win'?'u-win':cs==='close'?'u-close':cs==='live'?'u-live':cs==='dead'?'u-dead':'';
       return `<div class="ut-row ${rowCls}">
         <span class="ut-names">${names}</span>
         <span class="ut-gain">${gainChip}</span>
@@ -1347,7 +1350,7 @@ function renderDash(){
     const names=t.selections.filter(s=>['tete','gagnant'].includes(status(s.joueur,s.pays,s.type))).map(s=>s.joueur).join(', ');
     const{acquis:ga,potentiel:gp}=ticketGains(t);
     const pd=palierData(t);
-    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${pd.reached.acquis>0?'var(--c-gagne-light)':'var(--c-tete)'}">${pd.reached.acquis>0?fmt(pd.reached.acquis)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
+    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${ga>0?'var(--c-gagne-light)':'var(--c-tete)'}">${ga>0?fmt(ga)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
     const nextStr=nextPalierStr(pd,false);
     const totalStr=`<span style="font-size:10px;color:var(--muted2)">· ${ga>0?fmt(ga)+' acquis + ':''}${fmt(gp)} pot. total</span>`;
     return`<div class="alert ${win?'win':'close'}" onclick="openTicketOverlay('${t.id}')" style="cursor:pointer">
@@ -1734,7 +1737,7 @@ function renderAlertes(){
     const waitNames=t.selections.filter(s=>status(s.joueur,s.pays,s.type)==='attente').map(s=>s.joueur).join(', ');
     const{acquis:ga,potentiel:gp}=ticketGains(t);
     const pd=palierData(t);
-    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${pd.reached.acquis>0?'var(--c-gagne-light)':'var(--c-tete)'}">${pd.reached.acquis>0?fmt(pd.reached.acquis)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
+    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${ga>0?'var(--c-gagne-light)':'var(--c-tete)'}">${ga>0?fmt(ga)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
     const nextStr=nextPalierStr(pd,false);
     return`<div class="alert ${win?'win':'close'}" onclick="openTicketOverlay('${t.id}')" style="cursor:pointer">
       <strong>${t.nom}</strong> <span style="color:${'var(--muted)'}">${t.systeme}</span>
