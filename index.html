@@ -470,21 +470,6 @@ input:focus,select:focus{border-color:var(--rose);}
 </style>
 </head>
 <body>
-<script>
-// Ultra-early debug
-try {
-  var _d = document.createElement('div');
-  _d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#111;color:#f9a8c9;font-size:11px;padding:8px;z-index:99999;font-family:monospace';
-  _d.id = '_dbg';
-  _d.textContent = 'JS démarré...';
-  document.documentElement.appendChild(_d);
-  window.onerror = function(msg, src, line, col) {
-    var el = document.getElementById('_dbg');
-    if (el) el.textContent = 'ERREUR ligne ' + line + ': ' + msg;
-    return false;
-  };
-} catch(e) {}
-</script>
 
 <header class="header">
   <div class="header-top">
@@ -1543,9 +1528,9 @@ document.getElementById('fileImport').addEventListener('change',function(){
 
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredInstall=e;document.getElementById('installBanner').classList.add('show');});
 document.getElementById('btnInstall').addEventListener('click',function(){
-  if(!deferredInstall)return;deferredInstall.prompt();
-  var res=await deferredInstall.userChoice;
-  if(res.outcome==='accepted')document.getElementById('installBanner').classList.remove('show');
+  if(!deferredInstall)return;
+  deferredInstall.prompt();
+  document.getElementById('installBanner').classList.remove('show');
   deferredInstall=null;
 });
 
