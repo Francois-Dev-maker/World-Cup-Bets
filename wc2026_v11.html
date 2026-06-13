@@ -336,7 +336,7 @@ main{padding:20px 24px}
 .tcard-overlay.open{opacity:1;pointer-events:all}
 .tcard-sheet{
   background:var(--s1);border:1px solid var(--border2);border-radius:6px;
-  width:min(720px,96vw);max-height:90vh;overflow-y:auto;
+  width:min(900px,97vw);max-height:92vh;overflow-y:auto;
   margin-top:32px;
   transform:translateY(18px);
   transition:transform .25s cubic-bezier(.2,.8,.2,1);
@@ -355,7 +355,7 @@ main{padding:20px 24px}
   cursor:pointer;transition:all .1s;
 }
 .tcard-sheet-close:hover{color:var(--text);border-color:var(--muted)}
-.tcard-sheet-body{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tcard-sheet-body{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
 .tcard-sheet-col{display:flex;flex-direction:column;gap:12px}
 .tcard-sheet-section{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 .sheet-sel{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
@@ -878,6 +878,7 @@ function openTicketOverlay(ticketId) {
   const close = isClose(t);
   const g = ticketGains(t);
   const pd = palierData(t);
+  const [kMin, kMax] = t.systeme.split('/').map(Number);
 
   // Header
   document.getElementById('sheetNom').textContent = t.nom;
@@ -887,49 +888,144 @@ function openTicketOverlay(ticketId) {
   else if (close) { badge.textContent = 'Proche'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--c-tete-border);background:var(--c-tete-bg);color:var(--c-tete)'; }
   else { badge.textContent = 'En cours'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border2);background:var(--s2);color:var(--muted)'; }
 
-  // LEFT COL — sélections
+  // Build sheet content
+  const sheetEl = document.getElementById('tcardSheet');
+  
+  // ── SELECTIONS ──
+  const esc = v => v.replace(/\\/g,'\\\\').replace(/'/g, "\\'");
+  const SLABELS = {attente:'ATT', tete:'TÊTE', gagnant:'GAG', depasse:'DEP', perdant:'PERD'};
   const sels = t.selections.map(s => {
     const st = status(s.joueur, s.pays, s.type);
-    const dotColor = st === 'tete' ? 'var(--c-tete)' : st === 'gagnant' ? 'var(--c-gagne)' : st === 'depasse' ? 'var(--amber)' : st === 'perdant' ? 'var(--red)' : '#333';
-    const esc = v => v.replace(/'/g, "\'");
+    const dotColor = st==='tete'?'var(--c-tete)':st==='gagnant'?'var(--c-gagne)':st==='depasse'?'var(--amber)':st==='perdant'?'var(--red)':'#333';
+    const btns = ['tete','gagnant','depasse','perdant','attente'].map(sv =>
+      `<button onclick="setStatus('${esc(s.joueur)}','${esc(s.pays)}','${s.type}','${sv}');refreshOverlay('${ticketId}')"
+        style="font-size:8px;padding:2px 5px;border-radius:2px;border:1px solid ${st===sv?'var(--c-tete-border)':'var(--border2)'};background:${st===sv?'var(--c-tete-bg)':'var(--s2)'};color:${st===sv?'var(--c-tete)':'var(--muted)'};cursor:pointer;white-space:nowrap;transition:all .1s">
+        ${SLABELS[sv]}</button>`
+    ).join('');
     return `<div class="sheet-sel ${st}">
       <div class="sheet-sel-dot" style="background:${dotColor}"></div>
       <span class="sheet-sel-name">${s.joueur}</span>
-      <span style="font-size:10px;color:var(--muted2)">${s.pays}</span>
-      <span style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-left:4px">${s.type==='buteur'?'B':'P'}</span>
-      <div style="display:flex;gap:2px;margin-left:auto">
-        ${['tete','gagnant','depasse','perdant','attente'].map(sv =>
-          `<button onclick="setStatus('${esc(s.joueur)}','${esc(s.pays)}','${s.type}','${sv}');refreshOverlay('${ticketId}')"
-            style="font-size:8px;padding:2px 4px;border-radius:2px;border:1px solid ${st===sv?'var(--c-tete-border)':'var(--border2)'};background:${st===sv?'var(--c-tete-bg)':'var(--s2)'};color:${st===sv?'var(--c-tete)':'var(--muted)'};cursor:pointer;white-space:nowrap">
-            ${sv==='attente'?'ATT':sv==='tete'?'TÊTE':sv==='gagnant'?'GAG':sv==='depasse'?'DEP':'PERD'}
-          </button>`
-        ).join('')}
-      </div>
+      <span style="font-size:10px;color:var(--muted2);margin-right:4px">${s.pays.trim()}</span>
+      <span style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-right:8px">${s.type==='buteur'?'B':'P'}</span>
+      <div style="display:flex;gap:2px;flex-shrink:0">${btns}</div>
     </div>`;
   }).join('');
 
+  // ── PALIER BARS (cliquables) ──
+  const maxVal = Math.max(...pd.levels.map(l => l.pot + l.acquis), 1);
+  const bars = pd.levels.map(l => {
+    const total = l.pot + l.acquis;
+    const pct = Math.round(total / maxVal * 100);
+    const cls = l.mort ? 'mort' : l.atteint ? 'atteint' : (pd.next && l.k === pd.next.k ? 'next' : '');
+    const color = l.mort ? 'rgba(255,255,255,.08)' : l.atteint ? 'var(--c-gagne)' : (pd.next && l.k === pd.next.k ? 'var(--c-tete)' : 'rgba(255,255,255,.18)');
+    const valStr = l.mort ? '—' : (l.acquis > 0 && l.pot > 0)
+      ? `<span style="color:var(--c-gagne)">${fmt(l.acquis)}</span> <span style="color:var(--muted)">+${fmt(l.pot)}</span>`
+      : l.acquis > 0 ? `<span style="color:var(--c-gagne)">${fmt(l.acquis)}</span>`
+      : `+${fmt(l.pot)}`;
+    return `<div class="palier-bar-row ${cls}" onclick="filterSheetPalier(${l.k},'${ticketId}')" style="cursor:pointer;border-radius:3px;padding:2px 0;transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
+      <span class="palier-bar-lbl">${l.k}/${l.n}</span>
+      <div class="palier-bar-track"><div class="palier-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="palier-bar-val">${valStr}</span>
+    </div>`;
+  }).join('');
+
+  // ── COMBOS (all paliers initially) ──
+  const combosHTML = buildSheetCombos(t, null);
+
+  // ── ASSEMBLE ──
   document.getElementById('sheetLeft').innerHTML = `
     <div class="tcard-sheet-section">Sélections · ${ac}/${n} actifs · seuil ${mk}</div>
     ${sels}
+    <div class="tcard-sheet-section" style="margin-top:16px">Gains & Mises</div>
+    <div class="sheet-kpi-row">
+      <div class="sheet-kpi"><div class="sheet-kpi-n ${g.acquis>0?'green':'muted'}">${fmt(g.acquis)}</div><div class="sheet-kpi-l">Acquis</div></div>
+      <div class="sheet-kpi"><div class="sheet-kpi-n">${fmt(g.potentiel)}</div><div class="sheet-kpi-l">Potentiel</div></div>
+      <div class="sheet-kpi"><div class="sheet-kpi-n muted">${fmt(g.mise)}</div><div class="sheet-kpi-l">Misé</div></div>
+    </div>
   `;
 
-  // RIGHT COL — KPIs + palier bars
-  const kpis = `<div class="sheet-kpi-row">
-    <div class="sheet-kpi"><div class="sheet-kpi-n ${g.acquis>0?'green':'muted'}">${fmt(g.acquis)}</div><div class="sheet-kpi-l">Acquis</div></div>
-    <div class="sheet-kpi"><div class="sheet-kpi-n">${fmt(g.potentiel)}</div><div class="sheet-kpi-l">Potentiel</div></div>
-    <div class="sheet-kpi"><div class="sheet-kpi-n muted">${fmt(g.mise)}</div><div class="sheet-kpi-l">Misé</div></div>
-  </div>`;
-
   document.getElementById('sheetRight').innerHTML = `
-    <div class="tcard-sheet-section">Gains & Paliers</div>
-    ${kpis}
-    ${palierBarsHTML(pd)}
+    <div class="tcard-sheet-section">Gains par palier <span style="font-size:9px;color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none">· clic pour filtrer</span></div>
+    <div class="palier-bars" style="padding:0">${bars}</div>
+    <div class="tcard-sheet-section" style="margin-top:16px" id="sheetCombosTitle">Paris unitaires · tous paliers</div>
+    <div id="sheetCombos" style="max-height:340px;overflow-y:auto">${combosHTML}</div>
   `;
 
   // Open
   const overlay = document.getElementById('tcardOverlay');
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+function buildSheetCombos(t, filterK) {
+  const combos = getDeployedCombos(t);
+  const [kMin] = t.systeme.split('/').map(Number);
+  const statusColors = {gagnant:'var(--c-gagne)',tete:'var(--c-tete)',attente:'var(--muted2)',depasse:'var(--muted)',perdant:'var(--c-mort)'};
+  const filtered = filterK ? combos.filter(c => c.k === filterK) : combos;
+  
+  // Group by k
+  const groups = {};
+  filtered.forEach(({k, sels}) => { if(!groups[k]) groups[k]=[]; groups[k].push(sels); });
+
+  let html = '';
+  for (const k of Object.keys(groups).sort((a,b) => +a - +b)) {
+    const g = groups[k];
+    let levelAcq = 0, levelPot = 0, levelMort = 0;
+    const rows = g.map(sels => {
+      const cs = comboStatus(sels);
+      const gt = comboGainTotal(sels);
+      if (cs === 'dead') { levelMort++; return null; }
+      if (gt) { if(cs==='win') levelAcq+=gt; else levelPot+=gt; }
+      const names = sels.map(s => {
+        const st = status(s.joueur, s.pays, s.type);
+        const col = statusColors[st] || 'var(--muted2)';
+        const bold = st==='tete'||st==='gagnant' ? 'font-weight:600;' : '';
+        const deco = st==='perdant' ? 'text-decoration:line-through;' : '';
+        const check = st==='gagnant' ? '✓ ' : '';
+        return `<span style="color:${col};${bold}${deco}">${check}${s.joueur.split(' ')[0]}</span>`;
+      }).join('<span style="color:var(--muted)"> · </span>');
+      const gainChip = gt ? fmt(gt) : '—';
+      const rowCls = cs==='win'?'u-win':cs==='close'?'u-close':cs==='live'?'u-live':'';
+      return `<div class="ut-row ${rowCls}">
+        <span class="ut-names">${names}</span>
+        <span class="ut-gain">${gainChip}</span>
+      </div>`;
+    }).filter(Boolean).join('');
+
+    const allDead = levelMort === g.length;
+    const levelInfo = allDead ? `<span style="color:var(--red)">palier mort</span>`
+      : levelAcq > 0 ? `<span style="color:var(--c-gagne)">${fmt(levelAcq)}</span>`
+      : levelPot > 0 ? `<span style="color:var(--muted2)">${fmt(levelPot)}</span>` : '';
+
+    html += `<div style="margin-bottom:8px">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span>${k} sél.</span>
+        <span style="color:var(--muted)">${g.length} combinaisons</span>
+        <span style="margin-left:auto">${levelInfo}</span>
+      </div>
+      <div class="ut-list">${rows || '<span style="font-size:9px;color:var(--muted)">Tout mort</span>'}</div>
+    </div>`;
+  }
+  return html || '<div class="empty">Aucune combinaison</div>';
+}
+
+let SHEET_FILTER_K = null;
+function filterSheetPalier(k, ticketId) {
+  const t = T.find(x => x.id === ticketId);
+  if (!t) return;
+  // Toggle filter
+  SHEET_FILTER_K = SHEET_FILTER_K === k ? null : k;
+  const label = SHEET_FILTER_K ? `Paris unitaires · palier ${SHEET_FILTER_K}/${t.systeme.split('/')[1]}` : 'Paris unitaires · tous paliers';
+  document.getElementById('sheetCombosTitle').textContent = label;
+  document.getElementById('sheetCombos').innerHTML = buildSheetCombos(t, SHEET_FILTER_K);
+  // Highlight active bar
+  document.querySelectorAll('.palier-bar-row').forEach(row => {
+    const lbl = row.querySelector('.palier-bar-lbl');
+    if (lbl) {
+      const rowK = parseInt(lbl.textContent);
+      row.style.outline = (SHEET_FILTER_K && rowK === SHEET_FILTER_K) ? '1px solid var(--c-tete)' : '';
+    }
+  });
 }
 
 function refreshOverlay(ticketId) {
@@ -943,6 +1039,7 @@ function closeTicketOverlay(e) {
   overlay.classList.remove('open');
   document.body.style.overflow = '';
   OVERLAY_TICKET_ID = null;
+  SHEET_FILTER_K = null;
 }
 
 // Close on Escape
