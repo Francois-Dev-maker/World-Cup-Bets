@@ -709,7 +709,16 @@ var CANON_PAYS={
 };
 function paysKeyNorm(s){return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');}
 var PAYS_3 = {"France": "FRA", "Espagne": "ESP", "Allemagne": "ALL", "Portugal": "POR", "Bresil": "BRE", "Argentine": "ARG", "Angleterre": "ANG", "Ecosse": "SCO", "Belgique": "BEL", "Pays-Bas": "PB", "Maroc": "MAR", "Senegal": "SEN", "USA": "USA", "Mexique": "MEX", "Canada": "CAN", "Japon": "JAP", "Australie": "AUS", "Suisse": "SUI", "Croatie": "CRO", "Colombie": "COL", "Equateur": "EQU", "Uruguay": "URU", "Ghana": "GHA", "Egypte": "EGY", "Algerie": "ALG", "Tunisie": "TUN", "Iran": "IRN", "Arabie Saoudite": "SAU", "Qatar": "QAT", "Curacao": "CUW", "Haiti": "HAI", "Panama": "PAN", "Suede": "SUE", "Autriche": "AUT", "Turquie": "TUR", "Tchequie": "TCH", "Bosnie": "BOS", "Jordanie": "JOR", "Irak": "IRK", "Cap-Vert": "CPV", "Cote d'Ivoire": "CIV", "Côte d'Ivoire": "CIV", "RD Congo": "COD", "Ouzbekistan": "OUZ", "Coree du Sud": "COR", "Coree": "COR", "Norvege": "NOR", "Afrique du Sud": "RSA", "Paraguay": "PAR"};
-function pays3(p){var cp=canonPays(p);return PAYS_3[cp]||PAYS_3[p]||cp.substring(0,3).toUpperCase();}
+function pays3(p){
+  if(!p)return'';
+  var k=(p||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');
+  // Direct lookup on normalized key
+  for(var key in PAYS_3){
+    var nk=key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');
+    if(nk===k)return PAYS_3[key];
+  }
+  return p.trim().substring(0,3).toUpperCase();
+}
 function canonPays(p){var e=CANON_PAYS[paysKeyNorm(p)];return e?e[0]:(p||'').trim().replace(/\s+/g,' ');}
 function paysIso(p){var e=CANON_PAYS[paysKeyNorm(p)];return e?e[1]:null;}
 function canonJoueur(j){return (j||'').trim().replace(/\s+/g,' ').split(' ').map(function(w){return w?w.charAt(0).toUpperCase()+w.slice(1):w;}).join(' ');}
@@ -721,10 +730,7 @@ function isoToEmoji(iso){
   return iso.toUpperCase().split('').map(function(c){return String.fromCodePoint(127397+c.charCodeAt(0));}).join('');
 }
 function flagHTML(pays, cls) {
-  var iso = paysIso(pays);
-  var code = iso
-    ? iso.toUpperCase().replace('GB-ENG','ENG').replace('GB-SCT','SCO').replace('GB-WLS','WAL')
-    : (pays||'').trim().substring(0,3).toUpperCase();
+  var code = pays3(pays);
   return '<span class="cbadge ' + (cls||'') + '">' + code + '</span>';
 }
 var ST_PRIORITY={gagnant:6,perdant:5,tete:4,exaequo:4,depasse:2,attente:1};
@@ -1358,9 +1364,12 @@ function closeTOverlay() {
   MOBILE_FILTER_K = null;
 }
 
-// Tap overlay backdrop to close
-document.getElementById('tOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeTOverlay();
+// Tap overlay backdrop to close — deferred until DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+  var ov = document.getElementById('tOverlay');
+  if (ov) ov.addEventListener('click', function(e) {
+    if (e.target === this) closeTOverlay();
+  });
 });
 
 function render(){
