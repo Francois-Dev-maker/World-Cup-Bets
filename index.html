@@ -1699,8 +1699,19 @@ function toast(msg){var el=document.createElement('div');el.className='toast';el
 
 // Plein écran supprimé (non supporté iOS Safari)
 
+seedIfEmpty();
 migrateData();
 render();
+// Load from Supabase (async, overrides local statuses)
+supaLoadAll();
+// Subscribe to realtime changes
+supa.subscribeChanges(function(player_key, status, by) {
+  var pl = getPlayers();
+  pl[player_key] = status;
+  setPlayers(pl);
+  render();
+  if (by === 'auto') showToast('Auto: ' + player_key.split('|')[0], 'success');
+});
 </script>
 </body>
 </html>
