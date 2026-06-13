@@ -516,6 +516,8 @@ var CANON_PAYS={
   'paraguay':['Paraguay','py']
 };
 function paysKeyNorm(s){return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');}
+const PAYS_3 = {"France": "FRA", "Espagne": "ESP", "Allemagne": "ALL", "Portugal": "POR", "Bresil": "BRE", "Argentine": "ARG", "Angleterre": "ANG", "Ecosse": "SCO", "Belgique": "BEL", "Pays-Bas": "PB", "Maroc": "MAR", "Senegal": "SEN", "USA": "USA", "Mexique": "MEX", "Canada": "CAN", "Japon": "JAP", "Australie": "AUS", "Suisse": "SUI", "Croatie": "CRO", "Colombie": "COL", "Equateur": "EQU", "Uruguay": "URU", "Ghana": "GHA", "Egypte": "EGY", "Algerie": "ALG", "Tunisie": "TUN", "Iran": "IRN", "Arabie Saoudite": "SAU", "Qatar": "QAT", "Curacao": "CUW", "Haiti": "HAI", "Panama": "PAN", "Suede": "SUE", "Autriche": "AUT", "Turquie": "TUR", "Tchequie": "TCH", "Bosnie": "BOS", "Jordanie": "JOR", "Irak": "IRK", "Cap-Vert": "CPV", "Cote d'Ivoire": "CIV", "Côte d'Ivoire": "CIV", "RD Congo": "COD", "Ouzbekistan": "OUZ", "Coree du Sud": "COR", "Coree": "COR", "Norvege": "NOR", "Afrique du Sud": "RSA", "Paraguay": "PAR"};
+function pays3(p){var cp=canonPays(p);return PAYS_3[cp]||PAYS_3[p]||cp.substring(0,3).toUpperCase();}
 function canonPays(p){var e=CANON_PAYS[paysKeyNorm(p)];return e?e[0]:(p||'').trim().replace(/\s+/g,' ');}
 function paysIso(p){var e=CANON_PAYS[paysKeyNorm(p)];return e?e[1]:null;}
 function canonJoueur(j){return (j||'').trim().replace(/\s+/g,' ').split(' ').map(function(w){return w?w.charAt(0).toUpperCase()+w.slice(1):w;}).join(' ');}
@@ -905,7 +907,7 @@ function openTicketOverlay(ticketId) {
     return `<div class="sheet-sel ${st}">
       <div class="sheet-sel-dot" style="background:${dotColor}"></div>
       <span class="sheet-sel-name">${s.joueur}</span>
-      <span style="font-size:10px;color:var(--muted2);margin-right:4px">${s.pays.trim()}</span>
+      <span style="font-size:10px;color:var(--muted2);margin-right:4px">${pays3(s.pays)}</span>
       <span style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-right:8px">${s.type==='buteur'?'B':'P'}</span>
       <div style="display:flex;gap:2px;flex-shrink:0">${btns}</div>
     </div>`;
@@ -1320,7 +1322,7 @@ function renderDash(){
     const c=getCote(p.joueur);
     return`<div class="tete-pill ${st==='gagnant'?'gagnant-pill':''}" onclick="goToPlayer('${p.joueur}')" style="cursor:pointer;user-select:none">
       <div class="tete-pill-name">${p.joueur}${c?` <span class="pill-cote">×${c}</span>`:''}</div>
-      <div class="tete-pill-sub">${p.pays} · ${p.type} · ${nt}T · <span style="color:${st==='gagnant'?'var(--green)':'var(--rose)'}">${LABELS[st]}</span></div>
+      <div class="tete-pill-sub">${pays3(p.pays)} · ${p.type} · ${nt}T · <span style="color:${st==='gagnant'?'var(--green)':'var(--rose)'}">${LABELS[st]}</span></div>
     </div>`;
   }).join(''):'<div class="empty">Aucun joueur actif</div>';
 
@@ -1332,7 +1334,7 @@ function renderDash(){
     const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${pd.reached.acquis>0?'var(--c-gagne-light)':'var(--c-tete)'}">${pd.reached.acquis>0?fmt(pd.reached.acquis)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
     const nextStr=nextPalierStr(pd,false);
     const totalStr=`<span style="font-size:10px;color:var(--muted2)">· ${ga>0?fmt(ga)+' acquis + ':''}${fmt(gp)} pot. total</span>`;
-    return`<div class="alert ${win?'win':'close'}">
+    return`<div class="alert ${win?'win':'close'}" onclick="openTicketOverlay('${t.id}')" style="cursor:pointer">
       <strong>${t.nom}</strong> <span style="color:var(--muted)">${t.systeme}</span>
       &nbsp;·&nbsp; ${ac}/${n} actifs
       ${reachedStr?' &nbsp;·&nbsp; '+reachedStr:''}
@@ -1457,7 +1459,7 @@ function renderJoueurs(){
         <div class="pcard-count ${p.n>=4?'hi':''}">${p.n}×</div>
       </div>
       <div class="pcard-meta">
-        <span>${p.pays}</span>
+        <span>${pays3(p.pays)}</span>
         <span class="tbadge ${p.type}">${p.type}</span>
         ${c?`<span class="cote-badge">×${c}</span>`:''}
       </div>
@@ -1642,7 +1644,7 @@ function renderTickets(){
       return`<div class="sel ${st}">
         <div class="sel-dot ${st}"></div>
         <span class="sel-name">${s.joueur}</span>
-        <span class="sel-pays">${s.pays.trim()}</span>
+        <span class="sel-pays">${pays3(s.pays)}</span>
         <span class="sel-t">${s.type==='buteur'?'B':'P'}</span>
         ${c?`<span class="sel-cote">×${c}</span>`:''}
         <span class="sel-actions">${mini}</span>
@@ -1651,7 +1653,7 @@ function renderTickets(){
 
     const topCls=allDead?'is-dead':win?'has-win':ac>0?'has-tete':'';
     return`<div class="tcard ${topCls}">
-      <div class="tcard-head" onclick="openTicketOverlay('${t.id}')"; style="cursor:pointer">
+      <div class="tcard-head" onclick="openTicketOverlay('${t.id}')" style="cursor:pointer">
         <span class="tcard-nom">${t.nom}</span>
         <span class="tcard-sys">${t.systeme}</span>
         <div class="tcard-prog">
@@ -1718,7 +1720,7 @@ function renderAlertes(){
     const pd=palierData(t);
     const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${pd.reached.acquis>0?'var(--c-gagne-light)':'var(--c-tete)'}">${pd.reached.acquis>0?fmt(pd.reached.acquis)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
     const nextStr=nextPalierStr(pd,false);
-    return`<div class="alert ${win?'win':'close'}">
+    return`<div class="alert ${win?'win':'close'}" onclick="openTicketOverlay('${t.id}')" style="cursor:pointer">
       <strong>${t.nom}</strong> <span style="color:${'var(--muted)'}">${t.systeme}</span>
       &nbsp;·&nbsp; ${ac}/${n} actifs
       ${reachedStr?' &nbsp;·&nbsp; '+reachedStr:''}
@@ -1740,7 +1742,7 @@ function renderAlertes(){
     pairs.sort((x,y)=>x.shared.length-y.shared.length);
     isoRows=pairs.map(p=>{
       const cls=p.shared.length===0?'warn':p.shared.length===1?'close':'';
-      return`<div class="alert ${cls}">
+      return`<div class="alert ${cls}" style="cursor:default">
         <strong>${p.a.joueur}</strong> + <strong>${p.b.joueur}</strong>
         &nbsp;·&nbsp; ${p.shared.length} ticket${p.shared.length!==1?'s':''} commun${p.shared.length!==1?'s':''}
         <br><span style="font-size:10px;color:var(--muted)">${p.shared.map(t=>t.nom).join(', ')||'aucun'}</span>

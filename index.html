@@ -708,6 +708,8 @@ var CANON_PAYS={
   'paraguay':['Paraguay','py']
 };
 function paysKeyNorm(s){return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');}
+var PAYS_3 = {"France": "FRA", "Espagne": "ESP", "Allemagne": "ALL", "Portugal": "POR", "Bresil": "BRE", "Argentine": "ARG", "Angleterre": "ANG", "Ecosse": "SCO", "Belgique": "BEL", "Pays-Bas": "PB", "Maroc": "MAR", "Senegal": "SEN", "USA": "USA", "Mexique": "MEX", "Canada": "CAN", "Japon": "JAP", "Australie": "AUS", "Suisse": "SUI", "Croatie": "CRO", "Colombie": "COL", "Equateur": "EQU", "Uruguay": "URU", "Ghana": "GHA", "Egypte": "EGY", "Algerie": "ALG", "Tunisie": "TUN", "Iran": "IRN", "Arabie Saoudite": "SAU", "Qatar": "QAT", "Curacao": "CUW", "Haiti": "HAI", "Panama": "PAN", "Suede": "SUE", "Autriche": "AUT", "Turquie": "TUR", "Tchequie": "TCH", "Bosnie": "BOS", "Jordanie": "JOR", "Irak": "IRK", "Cap-Vert": "CPV", "Cote d'Ivoire": "CIV", "Côte d'Ivoire": "CIV", "RD Congo": "COD", "Ouzbekistan": "OUZ", "Coree du Sud": "COR", "Coree": "COR", "Norvege": "NOR", "Afrique du Sud": "RSA", "Paraguay": "PAR"};
+function pays3(p){var cp=canonPays(p);return PAYS_3[cp]||PAYS_3[p]||cp.substring(0,3).toUpperCase();}
 function canonPays(p){var e=CANON_PAYS[paysKeyNorm(p)];return e?e[0]:(p||'').trim().replace(/\s+/g,' ');}
 function paysIso(p){var e=CANON_PAYS[paysKeyNorm(p)];return e?e[1]:null;}
 function canonJoueur(j){return (j||'').trim().replace(/\s+/g,' ').split(' ').map(function(w){return w?w.charAt(0).toUpperCase()+w.slice(1):w;}).join(' ');}
@@ -1217,42 +1219,133 @@ function openTOverlay(ticketId) {
   var g = ticketGains(ticket);
   var pd = palierDataM(ticket);
   var sys = ticket.systeme.split('/').map(Number);
-  var mk = sys[0], ac = 0;
-  ticket.selections.forEach(function(s) { if (isWon(getPSt(s.joueur, s.pays, s.type))) ac++; });
+  var kMin = sys[0], kMax = sys[1];
+  var ac = 0;
+  ticket.selections.forEach(function(s) { if (isWon(getPSt(s.joueur,s.pays,s.type))) ac++; });
+
+  MOBILE_FILTER_K = null;
 
   document.getElementById('tSheetNom').textContent = ticket.nom;
   document.getElementById('tSheetSys').textContent = ticket.systeme;
 
-  // KPIs
-  document.getElementById('tSheetKpis').innerHTML =
-    '<div class="t-sheet-kpi"><div class="t-sheet-kpi-n ' + (g.acquis > 0 ? 'green' : 'dim') + '">' + (fmtEur(g.acquis)||'0€') + '</div><div class="t-sheet-kpi-l">Acquis</div></div>' +
-    '<div class="t-sheet-kpi"><div class="t-sheet-kpi-n">' + (fmtEur(g.potentiel)||'0€') + '</div><div class="t-sheet-kpi-l">Potentiel</div></div>' +
-    '<div class="t-sheet-kpi"><div class="t-sheet-kpi-n dim">' + ac + '/' + ticket.selections.length + '</div><div class="t-sheet-kpi-l">Actifs · seuil ' + mk + '</div></div>';
-
-  // Selections
+  // ── SÉLECTIONS ──
   var SLABELS = {attente:'ATT', tete:'TÊTE', gagnant:'GAG', depasse:'DEP', perdant:'PERD'};
   var selsHTML = ticket.selections.map(function(s) {
     var st = getPSt(s.joueur, s.pays, s.type);
     var dotC = st==='tete'?'var(--c-tete)':st==='gagnant'?'var(--c-gagne-light)':st==='depasse'?'var(--muted)':st==='perdant'?'var(--wine-text)':'var(--border2)';
     var btns = ['tete','gagnant','depasse','perdant','attente'].map(function(sv) {
-      return '<button class="t-sheet-sel-btn active-' + (st===sv?sv:'none') + '" ' +
+      var isActive = st === sv;
+      return '<button class="t-sheet-sel-btn active-' + (isActive?sv:'none') + '" ' +
         'onclick="setPSt('' + esc(s.joueur) + '','' + esc(s.pays) + '','' + s.type + '','' + sv + '');refreshTOverlay('' + ticketId + '')">' +
         SLABELS[sv] + '</button>';
     }).join('');
     return '<div class="t-sheet-sel ' + st + '">' +
       '<div class="t-sheet-sel-dot" style="background:' + dotC + '"></div>' +
-      '<div style="flex:1"><div class="t-sheet-sel-name">' + esc(s.joueur) + '</div>' +
-      '<div style="font-size:10px;color:var(--muted)">' + s.pays + ' · ' + s.type + '</div></div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="t-sheet-sel-name">' + esc(s.joueur) + '</div>' +
+        '<div style="font-size:10px;color:var(--muted)">' + pays3(s.pays) + ' · ' + s.type + '</div>' +
+      '</div>' +
       '<div class="t-sheet-sel-btns">' + btns + '</div></div>';
   }).join('');
-  document.getElementById('tSheetSels').innerHTML = '<div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sélections</div>' + selsHTML;
 
-  // Palier bars
-  document.getElementById('tSheetBars').innerHTML = palierBarsM(pd);
+  // ── KPIs ──
+  var kpisHTML =
+    '<div class="t-sheet-kpi"><div class="t-sheet-kpi-n ' + (g.acquis>0?'green':'dim') + '">' + (fmtEur(g.acquis)||'0€') + '</div><div class="t-sheet-kpi-l">Acquis</div></div>' +
+    '<div class="t-sheet-kpi"><div class="t-sheet-kpi-n">' + (fmtEur(g.potentiel)||'0€') + '</div><div class="t-sheet-kpi-l">Potentiel</div></div>' +
+    '<div class="t-sheet-kpi"><div class="t-sheet-kpi-n dim">' + ac + '/' + ticket.selections.length + '</div><div class="t-sheet-kpi-l">Actifs · seuil ' + kMin + '</div></div>';
+
+  // ── PALIER BARS (cliquables) ──
+  var maxVal = 1;
+  pd.levels.forEach(function(l) { if (l.pot + l.acquis > maxVal) maxVal = l.pot + l.acquis; });
+  var barsHTML = pd.levels.map(function(l) {
+    var total = l.pot + l.acquis;
+    var pct = Math.round(total / maxVal * 100);
+    var cls = l.mort ? 'mort' : l.atteint ? 'atteint' : (pd.next && l.k === pd.next.k ? 'next' : '');
+    var color = l.mort ? 'rgba(255,255,255,.06)' : l.atteint ? 'var(--c-gagne-light)' : (pd.next && l.k === pd.next.k ? 'var(--c-tete)' : 'rgba(255,255,255,.18)');
+    var valStr = l.mort ? '—' : (l.acquis > 0 ? fmtEur(l.acquis) + (l.pot > 0 ? ' +' + fmtEur(l.pot) : '') : '+' + fmtEur(l.pot));
+    return '<div class="palier-bar-row ' + cls + '" onclick="filterMobilePalier(' + l.k + ','' + ticketId + '')" style="cursor:pointer;border-radius:3px;padding:3px 0">' +
+      '<span class="palier-bar-lbl">' + l.k + '/' + l.n + '</span>' +
+      '<div class="palier-bar-track"><div class="palier-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<span class="palier-bar-val">' + valStr + '</span></div>';
+  }).join('');
+
+  // ── ASSEMBLE ──
+  document.getElementById('tSheetKpis').innerHTML = kpisHTML;
+  document.getElementById('tSheetSels').innerHTML =
+    '<div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sélections</div>' + selsHTML;
+  document.getElementById('tSheetBars').innerHTML =
+    '<div class="palier-bars">' +
+      '<div class="palier-bars-title">Gains par palier <span style="font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted)">· tap pour filtrer</span></div>' +
+      barsHTML +
+    '</div>' +
+    '<div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:14px 18px 8px" id="mSheetCombosTitle">Paris unitaires · tous paliers</div>' +
+    '<div id="mSheetCombos" style="padding:0 18px 16px">' + buildMobileCombos(ticket, null) + '</div>';
 
   var overlay = document.getElementById('tOverlay');
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+function buildMobileCombos(ticket, filterK) {
+  var sys = ticket.systeme.split('/').map(Number), kMin = sys[0], kMax = sys[1];
+  var statusColors = {gagnant:'var(--c-gagne-light)',tete:'var(--c-tete)',attente:'var(--muted2)',depasse:'var(--muted)',perdant:'var(--wine-text)'};
+  var html = '';
+  for (var k = kMin; k <= kMax; k++) {
+    if (filterK && k !== filterK) continue;
+    var combos = combinations(ticket.selections, k);
+    var levelAcq = 0, levelPot = 0, levelMort = 0;
+    var rows = combos.map(function(sels) {
+      var isDd = comboIsDead(sels), isFin = !isDd && comboIsFinalized(sels);
+      var isWn = !isDd && !isFin && comboIsWon(sels), isCl = !isDd && !isFin && !isWn && comboIsClose(sels);
+      if (isDd) { levelMort++; return null; }
+      var g = comboGainTotal(sels);
+      if (g) { if (isFin) levelAcq += g; else levelPot += g; }
+      var names = sels.map(function(s) {
+        var st = getPSt(s.joueur, s.pays, s.type);
+        var col = statusColors[st] || 'var(--muted2)';
+        var bold = (st==='tete'||st==='gagnant') ? 'font-weight:600;' : '';
+        var deco = st==='perdant' ? 'text-decoration:line-through;' : '';
+        return '<span style="color:' + col + ';' + bold + deco + '">' + (st==='gagnant'?'✓ ':'') + s.joueur.split(' ')[0] + '</span>';
+      }).join('<span style="color:var(--muted)"> · </span>');
+      var gainStr = g ? fmtEur(g) : '—';
+      var cls = isDd?'ch-dead':isFin?'ch-win':isWn?'ch-tete':isCl?'ch-close':'';
+      return '<div class="combo-chip-row ' + cls + '"><span class="combo-chip-names">' + names + '</span><span class="combo-chip-gain">' + gainStr + '</span></div>';
+    }).filter(Boolean).join('');
+
+    var allDead = levelMort === combos.length;
+    var lvlGain = allDead ? '<span style="color:var(--c-mort)">mort</span>'
+      : levelAcq > 0 ? '<span style="color:var(--c-gagne-light)">' + fmtEur(levelAcq) + '</span>'
+      : levelPot > 0 ? '<span style="color:var(--c-tete)">' + fmtEur(levelPot) + '</span>' : '';
+
+    html += '<div style="margin-bottom:10px">' +
+      '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:5px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+        '<span>' + k + ' sél.</span><span style="margin-left:auto">' + lvlGain + '</span>' +
+      '</div>' +
+      '<div class="combo-chip-list">' + (rows || '<span style="font-size:10px;color:var(--muted)">Tout mort</span>') + '</div>' +
+    '</div>';
+  }
+  return html || '<div style="color:var(--muted);font-size:12px;padding:12px 0">Aucune combinaison</div>';
+}
+
+var MOBILE_FILTER_K = null;
+function filterMobilePalier(k, ticketId) {
+  var T = getTickets();
+  var ticket = T.find(function(t) { return t.id === ticketId; });
+  if (!ticket) return;
+  MOBILE_FILTER_K = MOBILE_FILTER_K === k ? null : k;
+  var n = ticket.systeme.split('/')[1];
+  var title = MOBILE_FILTER_K ? ('Paris unitaires · palier ' + MOBILE_FILTER_K + '/' + n) : 'Paris unitaires · tous paliers';
+  document.getElementById('mSheetCombosTitle').textContent = title;
+  document.getElementById('mSheetCombos').innerHTML = buildMobileCombos(ticket, MOBILE_FILTER_K);
+  // Highlight active bar
+  document.querySelectorAll('#tOverlay .palier-bar-row').forEach(function(row) {
+    var lbl = row.querySelector('.palier-bar-lbl');
+    if (lbl) {
+      var rowK = parseInt(lbl.textContent);
+      row.style.outline = (MOBILE_FILTER_K && rowK === MOBILE_FILTER_K) ? '1px solid var(--c-tete)' : '';
+      row.style.borderRadius = '3px';
+    }
+  });
 }
 
 function refreshTOverlay(ticketId) {
@@ -1262,6 +1355,7 @@ function refreshTOverlay(ticketId) {
 function closeTOverlay() {
   document.getElementById('tOverlay').classList.remove('open');
   document.body.style.overflow = '';
+  MOBILE_FILTER_K = null;
 }
 
 // Tap overlay backdrop to close
@@ -1423,7 +1517,8 @@ function renderDashboard(){
   document.querySelectorAll('.dash-ticket-header').forEach(function(h){
     h.addEventListener('click',function(){
       var row=h.closest('.dash-ticket-row');
-      row.classList.toggle('open');
+      var tid=row.dataset.tid;
+      if(tid) openTOverlay(tid);
     });
   });
 
