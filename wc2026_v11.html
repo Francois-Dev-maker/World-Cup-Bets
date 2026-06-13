@@ -1352,7 +1352,13 @@ function renderDash(){
     const pd=palierData(t);
     const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${ga>0?'var(--c-gagne-light)':'var(--c-tete)'}">${ga>0?fmt(ga)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
     const nextStr=nextPalierStr(pd,false);
-    const totalStr=`<span style="font-size:10px;color:var(--muted2)">· ${ga>0?fmt(ga)+' acquis + ':''}${fmt(gp)} pot. total</span>`;
+    const totalStr=ga>0&&gp>0
+  ? `<span style="font-size:10px"> · <span style="color:var(--c-gagne)">${fmt(ga)} acquis</span> <span style="color:var(--muted)">+</span> <span style="color:var(--c-tete)">${fmt(gp)} potentiel</span></span>`
+  : ga>0
+  ? `<span style="font-size:10px"> · <span style="color:var(--c-gagne)">${fmt(ga)} acquis</span></span>`
+  : gp>0
+  ? `<span style="font-size:10px"> · <span style="color:var(--c-tete)">+${fmt(gp)} potentiel</span></span>`
+  : '';
     return`<div class="alert ${win?'win':'close'}" onclick="openTicketOverlay('${t.id}')" style="cursor:pointer">
       <strong>${t.nom}</strong> <span style="color:var(--muted)">${t.systeme}</span>
       &nbsp;·&nbsp; ${ac}/${n} actifs

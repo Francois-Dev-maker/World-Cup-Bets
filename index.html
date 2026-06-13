@@ -15,15 +15,18 @@
   --border:#262626;--border2:#333;
   --text:#f2f0ed;--muted:#8a8580;--muted2:#b0aba5;
   --radius:10px;--radius-sm:8px;
-  --c-gagne:#c9607e;--c-gagne-light:#e8a0b4;
-  --c-gagne-bg:rgba(201,96,126,0.1);--c-gagne-mid:rgba(201,96,126,0.28);
-  --c-tete:#e8a0b4;--c-tete-bg:rgba(232,160,180,0.08);--c-tete-mid:rgba(232,160,180,0.22);
+  /* GAGNANT = vert menthe */
+  --c-gagne:#3d9e7a;--c-gagne-light:#6ee7b7;
+  --c-gagne-bg:rgba(61,158,122,0.1);--c-gagne-mid:rgba(61,158,122,0.35);
+  /* EN TÊTE = rose pâle */
+  --c-tete:#f9a8c9;--c-tete-bg:rgba(249,168,201,0.08);--c-tete-mid:rgba(249,168,201,0.25);
   --c-attente:#f2f0ed;
-  --c-depasse:#9a9590;--c-depasse-bg:rgba(154,149,144,0.08);
+  --c-depasse:#f0a84a;--c-depasse-bg:rgba(240,168,74,0.08);
   --c-mort:#6a6560;--c-mort-bg:rgba(106,101,96,0.1);
-  --rose:#e8a0b4;--rose-dim:rgba(232,160,180,0.1);--rose-mid:rgba(232,160,180,0.25);
-  --blue:#e8a0b4;--blue-dim:rgba(232,160,180,0.08);
+  --rose:#f9a8c9;--rose-dim:rgba(249,168,201,0.1);--rose-mid:rgba(249,168,201,0.25);
+  --blue:#f9a8c9;--blue-dim:rgba(249,168,201,0.08);
   --wine:#9a9590;--wine-dim:rgba(154,149,144,0.1);--wine-text:#9a9590;
+  --amber:#f0a84a;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;font-weight:400;min-height:100dvh;-webkit-font-smoothing:antialiased;overflow-x:hidden;max-width:100vw;}
@@ -51,7 +54,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 .stat-card.full{grid-column:1/-1;}
 .stat-lbl{font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
 .stat-val{font-size:32px;font-weight:300;line-height:1;}
-.stat-val.rose{color:var(--rose);}.stat-val.blue{color:var(--blue);}.stat-val.wine{color:var(--wine-text);}
+.stat-val.rose{color:var(--rose);}.stat-val.green{color:var(--c-gagne-light);font-weight:600}.stat-val.blue{color:var(--blue);}.stat-val.wine{color:var(--wine-text);}
 .stat-sub{font-size:11px;color:var(--muted);margin-top:4px;}
 .progress-track{height:2px;background:var(--border2);border-radius:99px;margin-top:10px;overflow:hidden;}
 .progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--rose));transition:width .5s ease;}
@@ -94,7 +97,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans
 .pill.a-all{border-color:var(--rose);color:var(--rose);background:var(--rose-dim);}
 .pill.a-vivant{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
 .pill.a-danger{border-color:var(--wine-text);color:var(--wine-text);background:var(--wine-dim);}
-.pill.a-gagne{border-color:var(--rose);color:var(--rose);background:var(--rose-dim);}
+.pill.a-gagne{border-color:var(--c-gagne-mid);color:var(--rose);background:var(--rose-dim);}
 .pill.a-perdu{border-color:var(--muted);color:var(--muted2);background:rgba(255,255,255,.04);}
 .pill.a-tete{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
 .pill.a-exaequo{border-color:var(--rose);color:var(--rose);background:var(--rose-dim);}
@@ -814,7 +817,7 @@ function palierStackM(pd){
   if(tot<=0)return'';
   var segs=pd.levels.map(function(l){
     var v=l.pot+l.acquis;if(v<=0)return'';
-    var col=l.atteint?'#c9607e':(pd.next&&l.k===pd.next.k?'#e8a0b4':'#4a4642');
+    var col=l.atteint?'#6ee7b7':(pd.next&&l.k===pd.next.k?'#f9a8c9':'#4a4642');
     return'<div style="width:'+(v/tot*100).toFixed(2)+'%;background:'+col+'" title="'+l.k+'/'+l.n+' : '+Math.round(v)+'€"></div>';
   }).join('');
   return'<div class="palier-stack" title="Répartition du potentiel par palier">'+segs+'</div>';
@@ -1024,8 +1027,8 @@ function renderDashboard(){
 
   // ── ANALYSE INTERACTIVE : donut cliquable ↔ barres € ↔ liste Suivi (façon Power BI) ──
   var CAT_DEFS=[
-    {key:'gagne',label:'Acquis',color:'#c9607e'},
-    {key:'vivant',label:'Potentiel',color:'#e8a0b4'},
+    {key:'gagne',label:'Acquis',color:'#6ee7b7'},
+    {key:'vivant',label:'Potentiel',color:'#f9a8c9'},
     {key:'danger',label:'Danger',color:'#9a9590'},
     {key:'perdu',label:'Perdus',color:'#5a5550'},
     {key:'mort',label:'Morts',color:'#37332f'}
@@ -1043,9 +1046,9 @@ function renderDashboard(){
   }).join('');
   var eurBars=barsHTML([
     {label:'Misé',value:sM,color:'#6a6560'},
-    {label:'Acquis',value:sA,color:'#c9607e'},
-    {label:'Potentiel',value:sP,color:'#e8a0b4'},
-    {label:'Net',value:sNet,color:sNet>=0?'#c9607e':'#8a5a5a',signed:true}
+    {label:'Acquis',value:sA,color:'#6ee7b7'},
+    {label:'Potentiel',value:sP,color:'#f9a8c9'},
+    {label:'Net',value:sNet,color:sNet>=0?'#6ee7b7':'#8a5a5a',signed:true}
   ]);
   // Top pays (sur la sélection courante du donut) — tap = ouvre les tickets filtrés par drapeau
   var pCounts={};
@@ -1654,7 +1657,7 @@ function updateSyncBadge(state) {
   el.style.color = state === 'sync' ? '#7dd3b0' : '#9a9590';
 }
 function showToast(msg, type) {
-  var colors = { success: '#7dd3b0', warn: '#e8a0b4', error: '#f87171', info: '#9a9590' };
+  var colors = { success: '#7dd3b0', warn: '#f9a8c9', error: '#f87171', info: '#9a9590' };
   var t = document.createElement('div');
   t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1c1c1c;border:1px solid #333;color:' + (colors[type] || '#ccc') + ';font-size:12px;padding:8px 16px;border-radius:8px;z-index:9999;pointer-events:none';
   t.textContent = msg;
