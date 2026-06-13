@@ -381,16 +381,12 @@ input:focus,select:focus{border-color:var(--rose);}
 /* ── Filtre drapeaux ── */
 .flag-row{display:flex;gap:9px;overflow-x:auto;align-items:flex-start;scrollbar-width:none}
 .flag-row::-webkit-scrollbar{display:none}
-.flag-chip{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;flex-shrink:0;opacity:.45;transition:opacity .2s,transform .12s;user-select:none;padding:2px 1px;-webkit-tap-highlight-color:transparent}
+
 .flag-chip:hover{opacity:.85}
 .flag-chip.active{opacity:1}
 .flag-chip:active{transform:scale(.9)}
-.fimg{width:36px;height:25px;object-fit:cover;display:block;border-radius:2px;
-  -webkit-mask-image:radial-gradient(ellipse 100% 100% at 50% 50%,#000 42%,rgba(0,0,0,.5) 70%,transparent 98%);
-  mask-image:radial-gradient(ellipse 100% 100% at 50% 50%,#000 42%,rgba(0,0,0,.5) 70%,transparent 98%);
-  filter:saturate(.7) brightness(.78);transition:filter .25s}
-.flag-chip.active .fimg{filter:saturate(1.05) brightness(1)}
-.flag-n{font-size:8.5px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1}
+
+.flag-chip.active .fimg{color:var(--muted);font-variant-numeric:tabular-nums;line-height:1}
 .flag-chip.active .flag-n{color:var(--rose)}
 .flag-bar{width:16px;height:2px;border-radius:99px;background:transparent;transition:background .2s}
 .flag-chip.active .flag-bar{background:var(--rose)}
@@ -422,6 +418,10 @@ input:focus,select:focus{border-color:var(--rose);}
 .mini-val{flex-shrink:0;font-size:10px;font-variant-numeric:tabular-nums;min-width:52px;text-align:right;color:var(--muted2)}
 .p-mini-track{height:3px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;max-width:130px;margin-top:6px}
 .dash-next-palier{font-size:9.5px;color:var(--c-tete);margin-top:3px;white-space:nowrap}
+
+/* ── Country badge (remplace drapeaux) ── */
+.cbadge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);padding:2px 5px;border-radius:3px;min-width:28px;text-align:center;line-height:1.4;flex-shrink:0}
+.fimg{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);padding:2px 5px;border-radius:3px;min-width:28px;text-align:center;line-height:1.4}
 </style>
 </head>
 <body>
@@ -651,10 +651,12 @@ function isoToEmoji(iso){
   if(iso==='gb-wls')return'\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC77\uDB40\uDC6C\uDB40\uDC73\uDB40\uDC7F';
   return iso.toUpperCase().split('').map(function(c){return String.fromCodePoint(127397+c.charCodeAt(0));}).join('');
 }
-function flagHTML(pays,cls){
-  var iso=paysIso(pays);
-  if(!iso)return'<span class="'+(cls||'fimg')+'" style="font-size:15px;display:flex;align-items:center;justify-content:center">'+isoToEmoji(null)+'</span>';
-  return'<img class="'+(cls||'fimg')+'" src="https://flagcdn.com/w80/'+iso+'.png" alt="'+pays.replace(/"/g,'&quot;')+'" loading="lazy" onerror="this.replaceWith(document.createTextNode(\''+isoToEmoji(iso)+'\'))">';
+function flagHTML(pays, cls) {
+  var iso = paysIso(pays);
+  var code = iso
+    ? iso.toUpperCase().replace('GB-ENG','ENG').replace('GB-SCT','SCO').replace('GB-WLS','WAL')
+    : (pays||'').trim().substring(0,3).toUpperCase();
+  return '<span class="cbadge ' + (cls||'') + '">' + code + '</span>';
 }
 var ST_PRIORITY={gagnant:6,perdant:5,tete:4,exaequo:4,depasse:2,attente:1};
 function mergeStatut(a,b){if(!a)return b;if(!b)return a;return (ST_PRIORITY[b]||0)>(ST_PRIORITY[a]||0)?b:a;}
