@@ -308,6 +308,74 @@ main{padding:20px 24px}
 .mini-fill{height:100%;border-radius:99px}
 .mini-val{flex-shrink:0;font-size:10px;font-variant-numeric:tabular-nums;min-width:62px;text-align:right;color:#888}
 .p-mini-track{height:3px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-top:5px}
+
+/* ── PALIER BAR CHART ── */
+.palier-bars{padding:8px 4px 6px;border-top:1px solid var(--border)}
+.palier-bars-title{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.palier-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.palier-bar-lbl{font-size:9px;color:var(--muted2);width:28px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums}
+.palier-bar-track{flex:1;height:10px;background:rgba(255,255,255,.04);border-radius:2px;overflow:hidden;position:relative}
+.palier-bar-fill{height:100%;border-radius:2px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.palier-bar-val{font-size:9px;width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;color:var(--muted)}
+.palier-bar-row.atteint .palier-bar-lbl{color:var(--c-gagne)}
+.palier-bar-row.atteint .palier-bar-val{color:var(--c-gagne);font-weight:600}
+.palier-bar-row.next .palier-bar-lbl{color:var(--c-tete)}
+.palier-bar-row.next .palier-bar-val{color:var(--c-tete)}
+.palier-bar-row.mort .palier-bar-lbl{color:var(--muted);opacity:.4}
+.palier-bar-row.mort .palier-bar-val{color:var(--muted);opacity:.4}
+
+/* ── TICKET OVERLAY (fiche déployée plein écran) ── */
+.tcard-overlay{
+  position:fixed;inset:0;z-index:200;
+  display:flex;align-items:flex-start;justify-content:center;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s ease;
+}
+.tcard-overlay.open{opacity:1;pointer-events:all}
+.tcard-sheet{
+  background:var(--s1);border:1px solid var(--border2);border-radius:6px;
+  width:min(720px,96vw);max-height:90vh;overflow-y:auto;
+  margin-top:32px;
+  transform:translateY(18px);
+  transition:transform .25s cubic-bezier(.2,.8,.2,1);
+  scrollbar-width:thin;
+}
+.tcard-overlay.open .tcard-sheet{transform:translateY(0)}
+.tcard-sheet-head{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--s1);z-index:1;
+}
+.tcard-sheet-close{
+  margin-left:auto;background:none;border:1px solid var(--border2);
+  color:var(--muted);font-size:13px;padding:3px 10px;border-radius:3px;
+  cursor:pointer;transition:all .1s;
+}
+.tcard-sheet-close:hover{color:var(--text);border-color:var(--muted)}
+.tcard-sheet-body{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tcard-sheet-col{display:flex;flex-direction:column;gap:12px}
+.tcard-sheet-section{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.sheet-sel{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.sheet-sel:last-child{border-bottom:none}
+.sheet-sel-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sheet-sel-name{font-size:13px;font-weight:500;flex:1}
+.sheet-sel.tete .sheet-sel-name{color:var(--c-tete)}
+.sheet-sel.gagnant .sheet-sel-name{color:var(--c-gagne);font-weight:600}
+.sheet-sel.depasse{opacity:.5}
+.sheet-sel.perdant{opacity:.3}
+.sheet-kpi-row{display:flex;gap:8px}
+.sheet-kpi{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:10px 12px}
+.sheet-kpi-n{font-size:20px;font-weight:300;line-height:1;color:var(--c-tete)}
+.sheet-kpi-n.green{color:var(--c-gagne)}
+.sheet-kpi-n.muted{color:var(--muted2)}
+.sheet-kpi-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+@media(max-width:600px){
+  .tcard-sheet-body{grid-template-columns:1fr}
+  .tcard-sheet{margin-top:16px;max-height:95vh}
+}
 </style>
 </head>
 <body>
@@ -563,6 +631,28 @@ function nextPalierStr(pd,short){
     :`<span class="hi">manque ${l.manque} pour le palier ${l.k}/${l.n}</span> · <span style="color:var(--c-tete)">+${fmt(l.pot)} au palier</span>`;
 }
 // Chips de paliers pour une carte ticket
+function palierBarsHTML(pd) {
+  if (!pd || !pd.levels || !pd.levels.length) return '';
+  // Max value for scale
+  const maxVal = Math.max(...pd.levels.map(l => l.pot + l.acquis), 1);
+  const rows = pd.levels.map(l => {
+    const total = l.pot + l.acquis;
+    const pct = Math.round(total / maxVal * 100);
+    const cls = l.mort ? 'mort' : l.atteint ? 'atteint' : (pd.next && l.k === pd.next.k ? 'next' : '');
+    const color = l.mort ? 'rgba(255,255,255,.08)' : l.atteint ? 'var(--c-gagne)' : (pd.next && l.k === pd.next.k ? 'var(--c-tete)' : 'rgba(255,255,255,.15)');
+    const valStr = l.mort ? '—' : (l.acquis > 0 && l.pot > 0)
+      ? `<span style="color:var(--c-gagne)">${fmt(l.acquis)}</span><span style="color:var(--muted)"> +${fmt(l.pot)}</span>`
+      : l.acquis > 0 ? `<span style="color:var(--c-gagne)">${fmt(l.acquis)}</span>`
+      : `+${fmt(l.pot)}`;
+    return `<div class="palier-bar-row ${cls}">
+      <span class="palier-bar-lbl">${l.k}/${l.n}</span>
+      <div class="palier-bar-track"><div class="palier-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="palier-bar-val">${valStr}</span>
+    </div>`;
+  }).join('');
+  return `<div class="palier-bars"><div class="palier-bars-title">Gains par palier</div>${rows}</div>`;
+}
+
 function palierChips(pd){
   return'<div class="palier-strip"><span class="palier-strip-lbl">Paliers</span>'+pd.levels.map(l=>{
     const cls=l.mort?'mort':l.atteint?'atteint':(pd.next&&l.k===pd.next.k?'next':'');
@@ -769,6 +859,94 @@ async function refreshFromAPIFootball() {
 // ══════════════════════════════════════════════════════════
 let SUPA_LOADED = false;
 let PENDING_SAVES = {}; // player_key -> status (buffer offline)
+
+
+// ══════════════════════════════════════════════════════════
+// TICKET OVERLAY
+// ══════════════════════════════════════════════════════════
+let OVERLAY_TICKET_ID = null;
+
+function openTicketOverlay(ticketId) {
+  const t = T.find(x => x.id === ticketId);
+  if (!t) return;
+  OVERLAY_TICKET_ID = ticketId;
+
+  const ac = activeCount(t);
+  const mk = minK(t.systeme);
+  const n = t.selections.length;
+  const win = isWin(t);
+  const close = isClose(t);
+  const g = ticketGains(t);
+  const pd = palierData(t);
+
+  // Header
+  document.getElementById('sheetNom').textContent = t.nom;
+  document.getElementById('sheetSys').textContent = t.systeme;
+  const badge = document.getElementById('sheetBadge');
+  if (win) { badge.textContent = 'Gagnant'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--c-gagne-border);background:var(--c-gagne-bg);color:var(--c-gagne)'; }
+  else if (close) { badge.textContent = 'Proche'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--c-tete-border);background:var(--c-tete-bg);color:var(--c-tete)'; }
+  else { badge.textContent = 'En cours'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border2);background:var(--s2);color:var(--muted)'; }
+
+  // LEFT COL — sélections
+  const sels = t.selections.map(s => {
+    const st = status(s.joueur, s.pays, s.type);
+    const dotColor = st === 'tete' ? 'var(--c-tete)' : st === 'gagnant' ? 'var(--c-gagne)' : st === 'depasse' ? 'var(--amber)' : st === 'perdant' ? 'var(--red)' : '#333';
+    const esc = v => v.replace(/'/g, "\'");
+    return `<div class="sheet-sel ${st}">
+      <div class="sheet-sel-dot" style="background:${dotColor}"></div>
+      <span class="sheet-sel-name">${s.joueur}</span>
+      <span style="font-size:10px;color:var(--muted2)">${s.pays}</span>
+      <span style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-left:4px">${s.type==='buteur'?'B':'P'}</span>
+      <div style="display:flex;gap:2px;margin-left:auto">
+        ${['tete','gagnant','depasse','perdant','attente'].map(sv =>
+          `<button onclick="setStatus('${esc(s.joueur)}','${esc(s.pays)}','${s.type}','${sv}');refreshOverlay('${ticketId}')"
+            style="font-size:8px;padding:2px 4px;border-radius:2px;border:1px solid ${st===sv?'var(--c-tete-border)':'var(--border2)'};background:${st===sv?'var(--c-tete-bg)':'var(--s2)'};color:${st===sv?'var(--c-tete)':'var(--muted)'};cursor:pointer;white-space:nowrap">
+            ${sv==='attente'?'ATT':sv==='tete'?'TÊTE':sv==='gagnant'?'GAG':sv==='depasse'?'DEP':'PERD'}
+          </button>`
+        ).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('sheetLeft').innerHTML = `
+    <div class="tcard-sheet-section">Sélections · ${ac}/${n} actifs · seuil ${mk}</div>
+    ${sels}
+  `;
+
+  // RIGHT COL — KPIs + palier bars
+  const kpis = `<div class="sheet-kpi-row">
+    <div class="sheet-kpi"><div class="sheet-kpi-n ${g.acquis>0?'green':'muted'}">${fmt(g.acquis)}</div><div class="sheet-kpi-l">Acquis</div></div>
+    <div class="sheet-kpi"><div class="sheet-kpi-n">${fmt(g.potentiel)}</div><div class="sheet-kpi-l">Potentiel</div></div>
+    <div class="sheet-kpi"><div class="sheet-kpi-n muted">${fmt(g.mise)}</div><div class="sheet-kpi-l">Misé</div></div>
+  </div>`;
+
+  document.getElementById('sheetRight').innerHTML = `
+    <div class="tcard-sheet-section">Gains & Paliers</div>
+    ${kpis}
+    ${palierBarsHTML(pd)}
+  `;
+
+  // Open
+  const overlay = document.getElementById('tcardOverlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function refreshOverlay(ticketId) {
+  // Re-render the overlay after a status change
+  setTimeout(() => openTicketOverlay(ticketId), 50);
+}
+
+function closeTicketOverlay(e) {
+  if (e && e.target !== document.getElementById('tcardOverlay') && !e.target.classList.contains('tcard-sheet-close')) return;
+  const overlay = document.getElementById('tcardOverlay');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  OVERLAY_TICKET_ID = null;
+}
+
+// Close on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTicketOverlay({target: document.getElementById('tcardOverlay')}); });
 
 function init(){
   const reKey=k=>{const parts=String(k).split('|');if(parts.length<3)return null;return pkey(parts[0],parts[1],parts[2]);};
@@ -1376,7 +1554,7 @@ function renderTickets(){
 
     const topCls=allDead?'is-dead':win?'has-win':ac>0?'has-tete':'';
     return`<div class="tcard ${topCls}">
-      <div class="tcard-head" onclick="toggleDeploy('${t.id}',event)">
+      <div class="tcard-head" onclick="openTicketOverlay('${t.id}')"; style="cursor:pointer">
         <span class="tcard-nom">${t.nom}</span>
         <span class="tcard-sys">${t.systeme}</span>
         <div class="tcard-prog">
@@ -1385,18 +1563,20 @@ function renderTickets(){
         </div>
         ${gainHead}
         ${maxNomHtml}
-        <span class="tcard-expand-icon">${DEPLOY_STATE[t.id]?'▼':'▶'}</span>
+        <span class="tcard-expand-icon" style="color:var(--muted);font-size:9px">▶</span>
       </div>
-      <div class="tcard-body">${sels}</div>
-      ${allDead?'':palierChips(pd)}
-      ${buildProbaStrip(t)}
+      <div class="tcard-body">
+        <div style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 4px">
+          ${t.selections.map(s=>{const st=status(s.joueur,s.pays,s.type);const dot=st==='tete'?'var(--c-tete)':st==='gagnant'?'var(--c-gagne)':st==='depasse'?'var(--amber)':st==='perdant'?'var(--red)':'#333';return`<span title="${s.joueur} · ${s.pays}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:${st==='tete'||st==='gagnant'?'var(--text)':'var(--muted)'};padding:2px 6px;background:var(--s2);border-radius:3px;border:1px solid ${st==='tete'?'var(--c-tete-border)':st==='gagnant'?'var(--c-gagne-border)':'var(--border)'}"><span style="width:5px;height:5px;border-radius:50%;background:${dot};flex-shrink:0;display:inline-block"></span>${s.joueur}</span>`;}).join('')}
+        </div>
+      </div>
+      ${allDead?'':palierBarsHTML(pd)}
       <div class="tcard-foot">
         <span class="tcard-info">${ac} actifs · seuil ${mk}${nbMort>0?` · <span style="color:var(--red)">${nbMort} mort${nbMort>1?'s':''}</span>`:''}</span>
         ${badge}
         <span class="tcard-unitaires">${nbU} unit.</span>
         <span class="tcard-mise">${fmt(mise)}</span>
       </div>
-      ${buildDeployedSection(t)}
     </div>`;
   }).join(''):'<div class="empty">Aucun ticket</div>';
 
@@ -1524,5 +1704,21 @@ function goTab(id,btn){
 
 init();
 </script>
+
+<!-- TICKET OVERLAY -->
+<div class="tcard-overlay" id="tcardOverlay" onclick="closeTicketOverlay(event)">
+  <div class="tcard-sheet" id="tcardSheet">
+    <div class="tcard-sheet-head">
+      <span id="sheetNom" style="font-size:15px;font-weight:500"></span>
+      <span id="sheetSys" style="font-size:11px;color:var(--muted);background:var(--s2);border:1px solid var(--border2);padding:1px 7px;border-radius:3px"></span>
+      <span id="sheetBadge" style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid transparent"></span>
+      <button class="tcard-sheet-close" onclick="closeTicketOverlay()">✕ Fermer</button>
+    </div>
+    <div class="tcard-sheet-body">
+      <div class="tcard-sheet-col" id="sheetLeft"></div>
+      <div class="tcard-sheet-col" id="sheetRight"></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

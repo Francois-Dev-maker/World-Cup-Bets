@@ -422,6 +422,73 @@ input:focus,select:focus{border-color:var(--rose);}
 /* ── Country badge (remplace drapeaux) ── */
 .cbadge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);padding:2px 5px;border-radius:3px;min-width:28px;text-align:center;line-height:1.4;flex-shrink:0}
 .fimg{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);padding:2px 5px;border-radius:3px;min-width:28px;text-align:center;line-height:1.4}
+
+/* ── PALIER BAR CHART (mobile) ── */
+.palier-bars{padding:10px 18px 6px}
+.palier-bars-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.palier-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.palier-bar-lbl{font-size:10px;color:var(--muted2);width:30px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums}
+.palier-bar-track{flex:1;height:11px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.palier-bar-fill{height:100%;border-radius:2px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.palier-bar-val{font-size:10px;width:60px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;color:var(--muted2)}
+.palier-bar-row.atteint .palier-bar-lbl{color:var(--c-gagne-light)}
+.palier-bar-row.atteint .palier-bar-val{color:var(--c-gagne-light);font-weight:600}
+.palier-bar-row.next .palier-bar-lbl{color:var(--c-tete)}
+.palier-bar-row.next .palier-bar-val{color:var(--c-tete)}
+.palier-bar-row.mort .palier-bar-lbl,.palier-bar-row.mort .palier-bar-val{opacity:.35}
+
+/* ── TICKET OVERLAY (mobile) ── */
+.t-overlay{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.8);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s ease;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.t-overlay.open{opacity:1;pointer-events:all}
+.t-sheet{
+  background:var(--surface);
+  border-radius:16px 16px 0 0;
+  min-height:60vh;
+  margin-top:10vh;
+  padding-bottom:env(safe-area-inset-bottom,20px);
+  transform:translateY(30px);
+  transition:transform .28s cubic-bezier(.2,.8,.2,1);
+}
+.t-overlay.open .t-sheet{transform:translateY(0)}
+.t-sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:99px;margin:12px auto 0}
+.t-sheet-head{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 18px 12px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--surface);z-index:1;border-radius:16px 16px 0 0;
+}
+.t-sheet-nom{font-size:16px;font-weight:600}
+.t-sheet-sys{font-size:11px;background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:5px;color:var(--muted2)}
+.t-sheet-close{margin-left:auto;background:none;border:1px solid var(--border2);color:var(--muted2);font-size:13px;padding:5px 12px;border-radius:8px;cursor:pointer;min-height:36px}
+.t-sheet-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 18px 0}
+.t-sheet-kpi{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px}
+.t-sheet-kpi-n{font-size:18px;font-weight:300;line-height:1;color:var(--c-tete)}
+.t-sheet-kpi-n.green{color:var(--c-gagne-light)}
+.t-sheet-kpi-n.dim{color:var(--muted2)}
+.t-sheet-kpi-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+.t-sheet-sels{padding:14px 18px 0}
+.t-sheet-sel{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.t-sheet-sel:last-child{border-bottom:none}
+.t-sheet-sel-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.t-sheet-sel-name{font-size:14px;font-weight:500;flex:1}
+.t-sheet-sel.tete .t-sheet-sel-name{color:var(--c-tete)}
+.t-sheet-sel.gagnant .t-sheet-sel-name{color:var(--c-gagne-light);font-weight:600}
+.t-sheet-sel.depasse{opacity:.55}
+.t-sheet-sel.perdant{opacity:.3}
+.t-sheet-sel-btns{display:flex;gap:3px}
+.t-sheet-sel-btn{font-size:9px;padding:3px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--muted2);cursor:pointer;min-height:28px;-webkit-tap-highlight-color:transparent}
+.t-sheet-sel-btn.active-tete{color:var(--c-tete);border-color:var(--c-tete-mid);background:var(--c-tete-bg)}
+.t-sheet-sel-btn.active-gagnant{color:var(--c-gagne-light);border-color:var(--c-gagne-mid);background:var(--c-gagne-bg)}
+.t-sheet-sel-btn.active-depasse{color:var(--muted2);border-color:var(--border2)}
+.t-sheet-sel-btn.active-perdant{color:var(--wine-text);border-color:rgba(139,58,58,.4);background:var(--wine-dim)}
+.t-sheet-sel-btn.active-attente{color:var(--muted2);border-color:var(--border2)}
 </style>
 </head>
 <body>
@@ -1142,6 +1209,66 @@ document.querySelectorAll('.tab').forEach(function(tab){
   });
 });
 
+
+function openTOverlay(ticketId) {
+  var T = getTickets();
+  var ticket = T.find(function(t) { return t.id === ticketId; });
+  if (!ticket) return;
+  var g = ticketGains(ticket);
+  var pd = palierDataM(ticket);
+  var sys = ticket.systeme.split('/').map(Number);
+  var mk = sys[0], ac = 0;
+  ticket.selections.forEach(function(s) { if (isWon(getPSt(s.joueur, s.pays, s.type))) ac++; });
+
+  document.getElementById('tSheetNom').textContent = ticket.nom;
+  document.getElementById('tSheetSys').textContent = ticket.systeme;
+
+  // KPIs
+  document.getElementById('tSheetKpis').innerHTML =
+    '<div class="t-sheet-kpi"><div class="t-sheet-kpi-n ' + (g.acquis > 0 ? 'green' : 'dim') + '">' + (fmtEur(g.acquis)||'0€') + '</div><div class="t-sheet-kpi-l">Acquis</div></div>' +
+    '<div class="t-sheet-kpi"><div class="t-sheet-kpi-n">' + (fmtEur(g.potentiel)||'0€') + '</div><div class="t-sheet-kpi-l">Potentiel</div></div>' +
+    '<div class="t-sheet-kpi"><div class="t-sheet-kpi-n dim">' + ac + '/' + ticket.selections.length + '</div><div class="t-sheet-kpi-l">Actifs · seuil ' + mk + '</div></div>';
+
+  // Selections
+  var SLABELS = {attente:'ATT', tete:'TÊTE', gagnant:'GAG', depasse:'DEP', perdant:'PERD'};
+  var selsHTML = ticket.selections.map(function(s) {
+    var st = getPSt(s.joueur, s.pays, s.type);
+    var dotC = st==='tete'?'var(--c-tete)':st==='gagnant'?'var(--c-gagne-light)':st==='depasse'?'var(--muted)':st==='perdant'?'var(--wine-text)':'var(--border2)';
+    var btns = ['tete','gagnant','depasse','perdant','attente'].map(function(sv) {
+      return '<button class="t-sheet-sel-btn active-' + (st===sv?sv:'none') + '" ' +
+        'onclick="setPSt('' + esc(s.joueur) + '','' + esc(s.pays) + '','' + s.type + '','' + sv + '');refreshTOverlay('' + ticketId + '')">' +
+        SLABELS[sv] + '</button>';
+    }).join('');
+    return '<div class="t-sheet-sel ' + st + '">' +
+      '<div class="t-sheet-sel-dot" style="background:' + dotC + '"></div>' +
+      '<div style="flex:1"><div class="t-sheet-sel-name">' + esc(s.joueur) + '</div>' +
+      '<div style="font-size:10px;color:var(--muted)">' + s.pays + ' · ' + s.type + '</div></div>' +
+      '<div class="t-sheet-sel-btns">' + btns + '</div></div>';
+  }).join('');
+  document.getElementById('tSheetSels').innerHTML = '<div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sélections</div>' + selsHTML;
+
+  // Palier bars
+  document.getElementById('tSheetBars').innerHTML = palierBarsM(pd);
+
+  var overlay = document.getElementById('tOverlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function refreshTOverlay(ticketId) {
+  setTimeout(function() { openTOverlay(ticketId); }, 60);
+}
+
+function closeTOverlay() {
+  document.getElementById('tOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Tap overlay backdrop to close
+document.getElementById('tOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeTOverlay();
+});
+
 function render(){
   if(activeTab==='dashboard')renderDashboard();
   if(activeTab==='tickets'){renderFlagFilters();renderTFilters();renderPlayerFilter();renderTickets();}
@@ -1431,13 +1558,31 @@ function renderTickets(){
   var el=document.getElementById('ticketsList');
   if(!F.length){el.innerHTML='<div class="empty"><div class="empty-title">'+(tFilter==='tous'&&!tPlayerFilter?'Aucun ticket':'Aucun resultat')+'</div><div>'+((!tPlayerFilter&&tFilter==='tous')?'Cree ton premier ticket avec le bouton +':'')+'</div></div>';return;}
   el.innerHTML=F.map(function(t){return ticketCard(t);}).join('');
-  el.querySelectorAll('.ticket-header').forEach(function(h){h.addEventListener('click',function(){var id=h.closest('.ticket').dataset.id;openSet.has(id)?openSet.delete(id):openSet.add(id);saveOpen();render();});});
+  el.querySelectorAll('.ticket-header').forEach(function(h){h.addEventListener('click',function(){var id=h.closest('.ticket').dataset.id;openTOverlay(id);});});
   el.querySelectorAll('.btn-edit').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();openModal(b.dataset.id);});});
   el.querySelectorAll('.btn-del').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();startDelete(b.dataset.id);});});
   el.querySelectorAll('.st-btn').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();setPSt(b.dataset.j,b.dataset.p,b.dataset.t,b.dataset.s);render();});});
   el.querySelectorAll('.btn-deploy').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var did=b.dataset.did;openSet.has(did)?openSet.delete(did):openSet.add(did);saveOpen();render();});});
 }
 
+
+function palierBarsM(pd) {
+  if (!pd || !pd.levels || !pd.levels.length) return '';
+  var maxVal = 1;
+  pd.levels.forEach(function(l) { if (l.pot + l.acquis > maxVal) maxVal = l.pot + l.acquis; });
+  var rows = pd.levels.map(function(l) {
+    var total = l.pot + l.acquis;
+    var pct = Math.round(total / maxVal * 100);
+    var cls = l.mort ? 'mort' : l.atteint ? 'atteint' : (pd.next && l.k === pd.next.k ? 'next' : '');
+    var color = l.mort ? 'rgba(255,255,255,.06)' : l.atteint ? 'var(--c-gagne-light)' : (pd.next && l.k === pd.next.k ? 'var(--c-tete)' : 'rgba(255,255,255,.18)');
+    var valStr = l.mort ? '—' : (l.acquis > 0 ? fmtEur(l.acquis) + (l.pot > 0 ? ' +' + fmtEur(l.pot) : '') : '+' + fmtEur(l.pot));
+    return '<div class="palier-bar-row ' + cls + '">' +
+      '<span class="palier-bar-lbl">' + l.k + '/' + l.n + '</span>' +
+      '<div class="palier-bar-track"><div class="palier-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<span class="palier-bar-val">' + valStr + '</span></div>';
+  }).join('');
+  return '<div class="palier-bars"><div class="palier-bars-title">Gains par palier</div>' + rows + '</div>';
+}
 function ticketCard(ticket){
   var st=ticketStatus(ticket);var isOpen=openSet.has(ticket.id);var pd=palierDataM(ticket);
   var BL={vivant:'Potentiel',danger:'Danger',gagne:'Acquis',perdu:'Perdu',mort:'Mort'};
@@ -1466,7 +1611,7 @@ function ticketCard(ticket){
     '<span class="t-badge '+st+'">'+BL[st]+'</span>'+
     '<div class="chevron">&#9662;</div>'+
     '</div>'+
-    ((st==='mort'||st==='perdu')?'':palierChipsM(pd))+
+    ((st==='mort'||st==='perdu')?'':palierBarsM(pd))+
     '<div class="ticket-body">'+
     '<div class="sels">'+ticket.selections.map(function(s){return selRow(s);}).join('')+'</div>'+
     gainLine+
@@ -1715,5 +1860,20 @@ supa.subscribeChanges(function(player_key, status, by) {
   if (by === 'auto') showToast('Auto: ' + player_key.split('|')[0], 'success');
 });
 </script>
+
+<div class="t-overlay" id="tOverlay">
+  <div class="t-sheet" id="tSheet">
+    <div class="t-sheet-handle"></div>
+    <div class="t-sheet-head">
+      <span class="t-sheet-nom" id="tSheetNom"></span>
+      <span class="t-sheet-sys" id="tSheetSys"></span>
+      <button class="t-sheet-close" onclick="closeTOverlay()">✕</button>
+    </div>
+    <div class="t-sheet-kpis" id="tSheetKpis"></div>
+    <div class="t-sheet-sels" id="tSheetSels"></div>
+    <div id="tSheetBars"></div>
+    <div style="height:30px"></div>
+  </div>
+</div>
 </body>
 </html>
