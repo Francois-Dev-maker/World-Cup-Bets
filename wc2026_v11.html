@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WC 2026</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0c0c;--s1:#111;--s2:#141414;--s3:#181818;
+  --border:#1e1e1e;--border2:#222;
+  --text:#f0f0f0;--muted:#666;--muted2:#999;
+  /* Statuts — dégradé de roses pour positif, gris pour neutre/négatif */
+  --c-gagne:#7dd3b0;--c-gagne-bg:#0a1a13;--c-gagne-border:#1a4033;
+  --c-tete:#f0a8c0;--c-tete-bg:#160a0f;--c-tete-border:#2e1220;
+  --c-attente:#f0f0f0;--c-attente-bg:#111;--c-attente-border:#222;
+  --c-depasse:#888;--c-depasse-bg:#111;--c-depasse-border:#222;
+  --c-mort:#444;--c-mort-bg:#0e0e0e;--c-mort-border:#1a1a1a;
+  /* Alias legacy */
+  --rose:#f0a8c0;--rose-dim:#d4789a;--rose-bg:#160a0f;--rose-mid:#2e1220;
+  --green:#7dd3b0;--green-bg:#0a1a13;
+  --amber:#888;--amber-bg:#111;--amber-mid:#222;
+  --red:#444;--red-bg:#0e0e0e;
+  --blue:#f0a8c0;--blue-bg:#160a0f;
+}
+html{font-size:13px}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-weight:400;min-height:100vh;line-height:1.4}
+
+/* ── HEADER ── */
+header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;height:48px;gap:24px}
+.logo{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--text);flex-shrink:0}
+.h-stats{display:flex;gap:20px;margin-left:auto;flex-wrap:wrap}
+.h-stat{display:flex;align-items:baseline;gap:4px}
+.h-stat-n{font-size:15px;font-weight:600;color:var(--rose)}
+.h-stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+
+/* ── NAV ── */
+nav{background:var(--bg);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:4px}
+nav button{background:none;border:none;border-bottom:1px solid transparent;color:var(--muted);font:10px/1 'Inter',sans-serif;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:12px 12px;cursor:pointer;transition:color .12s,border-color .12s;margin-bottom:-1px}
+nav button:hover{color:var(--text)}
+nav button.active{color:var(--text);border-bottom-color:var(--text)}
+.nav-sep{flex:1}
+.expand-all-btn{font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:var(--s2);border:1px solid var(--border2);color:var(--muted);padding:4px 10px;border-radius:6px;cursor:pointer;transition:all .1s}
+.expand-all-btn:hover{color:var(--text);border-color:var(--muted)}
+
+/* ── MAIN ── */
+main{padding:20px 24px}
+.tab{display:none}.tab.active{display:block}
+.label{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* ── KPI ── */
+.kpi-row{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border2);border-top:1px solid var(--border2)}
+.kpi{flex:1;background:transparent;padding:12px 14px;border-right:1px solid var(--border2)}
+.kpi-n{font-size:22px;font-weight:300;line-height:1}
+.kpi-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+.kpi-sub{font-size:10px;color:var(--muted2);margin-top:2px}
+
+/* ── GAINS ROW ── */
+.gains-row{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border2);border-top:1px solid var(--border2)}
+.gain-kpi{flex:1;background:transparent;padding:12px 14px;border-right:1px solid var(--border2)}
+.gain-n{font-size:18px;font-weight:500;line-height:1}
+.gain-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+
+/* ── TETE STRIP ── */
+.tete-strip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.tete-pill{background:transparent;border:none;border-bottom:1px solid var(--border2);padding:7px 4px}
+.tete-pill-name{font-size:13px;font-weight:500;color:var(--rose)}
+.tete-pill-sub{font-size:10px;color:var(--muted2);margin-top:2px}
+.gagnant-pill{background:var(--green-bg);border:1px solid #1a5040}
+.gagnant-pill .tete-pill-name{color:var(--green)}
+.pill-cote{color:var(--amber);font-size:10px;font-weight:600}
+
+/* ── ALERT ── */
+.alert{border-left:2px solid var(--border2);background:transparent;padding:8px 12px;margin-bottom:2px;font-size:12px;color:var(--muted2);border-bottom:1px solid var(--border)}
+.alert.win{border-left-color:var(--green);background:var(--green-bg)}
+.alert.close{border-left-color:var(--rose);background:var(--rose-bg)}
+.alert.warn{border-left-color:var(--red);background:var(--red-bg)}
+.alert strong{color:var(--text);font-weight:500}
+.alert .hi{color:var(--rose);font-weight:600}
+.alert .ok{color:var(--green);font-weight:600}
+.alert .gain-tag{color:var(--amber);font-weight:600}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.filters input,.filters select{background:var(--s1);border:1px solid var(--border2);color:var(--text);font:12px 'Inter',sans-serif;padding:5px 9px;border-radius:3px;outline:none;transition:border-color .1s}
+.filters input{width:190px}
+.filters input::placeholder{color:var(--muted)}
+.filters input:focus,.filters select:focus{border-color:var(--rose-dim)}
+.filters select option{background:#111}
+
+/* ── JOUEURS ── */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:5px;margin-bottom:20px}
+.pcard{background:transparent;border:none;border-bottom:1px solid var(--border2);padding:9px 4px;transition:opacity .1s}
+.pcard.tete   {border-bottom-color:var(--c-tete)}
+.pcard.gagnant{border-bottom-color:var(--c-gagne);background:rgba(201,96,126,0.05)}
+.pcard.depasse{border-bottom-color:var(--c-depasse)}
+.pcard.perdant{border-bottom-color:var(--c-mort);opacity:.5}
+.pcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.pcard-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard.tete    .pcard-name{color:var(--c-tete)}
+.pcard.gagnant .pcard-name{color:var(--c-gagne);font-weight:700}
+.pcard.depasse .pcard-name{color:var(--c-depasse)}
+.pcard.perdant .pcard-name{color:var(--c-mort)}
+.pcard-count{font-size:11px;color:var(--muted);flex-shrink:0}
+.pcard-count.hi{color:var(--rose-dim)}
+.pcard-meta{font-size:10px;color:var(--muted);margin-top:3px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.cote-badge{font-size:10px;color:var(--muted2);padding:0 2px}
+.tbadge{font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:0 4px;border-radius:6px;font-weight:500}
+.tbadge.buteur{background:#111b2e;color:var(--blue)}
+.tbadge.passeur{background:#0d2018;color:var(--green)}
+.pcard-btns{display:flex;gap:2px;margin-top:7px;flex-wrap:wrap}
+.sbtn{flex:1;min-width:0;background:var(--s2);border:1px solid var(--border2);color:var(--muted);font:9px 'Inter',sans-serif;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:4px 2px;border-radius:6px;cursor:pointer;transition:all .1s;white-space:nowrap}
+.sbtn:hover{color:var(--text);border-color:var(--muted)}
+.sbtn.on-attente{background:transparent;color:var(--c-attente);border-color:var(--border2)}
+.sbtn.on-tete   {background:var(--c-tete-bg);color:var(--c-tete);border-color:var(--c-tete-border)}
+.sbtn.on-gagnant{background:var(--c-gagne-bg);color:var(--c-gagne);border-color:var(--c-gagne-border)}
+.sbtn.on-depasse{background:var(--c-depasse-bg);color:var(--c-depasse);border-color:var(--c-depasse-border)}
+.sbtn.on-perdant{background:var(--red-bg);color:var(--red);border-color:#6b2a1a}
+
+/* ── TICKETS GRID ── */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:7px}
+
+/* ── TCARD ── */
+.tcard{background:transparent;border:none;border-bottom:1px solid var(--border2);overflow:hidden;margin-bottom:4px}
+.tcard.has-win{border-left:2px solid var(--c-gagne)}
+.tcard.has-tete{border-left:2px solid var(--c-tete)}
+.tcard.is-dead{opacity:.4;border-left:2px solid var(--c-mort)}
+.tcard.is-dead .tcard-nom{text-decoration:line-through;color:var(--c-mort)}
+.tcard.has-tete{border-top:1px solid var(--rose-mid)}
+.tcard-head{display:flex;align-items:center;gap:7px;padding:8px 4px;background:transparent;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.tcard-nom{font-size:13px;font-weight:500;color:var(--text)}
+.tcard-sys{font-size:10px;font-weight:500;letter-spacing:.06em;color:var(--muted2);background:transparent;border:1px solid var(--border2);padding:1px 6px;border-radius:4px}
+.tcard-prog{display:flex;align-items:center;gap:5px}
+.pbar-wrap{width:42px;height:2px;background:var(--border2);border-radius:1px;overflow:hidden}
+.pbar{height:100%;border-radius:1px;transition:width .3s}
+.tcard-frac{font-size:11px;font-weight:600;color:var(--muted);min-width:24px;text-align:right}
+.tcard-gain-head{font-size:10px;font-weight:600;color:var(--amber);margin-left:auto;white-space:nowrap}
+.tcard-expand-icon{font-size:9px;color:var(--muted);flex-shrink:0;margin-left:4px}
+
+.tcard-body{padding:4px 0}
+.sel{display:flex;align-items:center;gap:6px;padding:2px 3px;border-radius:2px}
+.sel.tete   {background:transparent}
+.sel.gagnant{background:var(--s2)}
+.sel.depasse{opacity:.5}
+.sel.perdant{opacity:.3}
+.sel-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.sel-dot.attente{background:#2a2a2a}
+.sel-dot.tete   {background:var(--rose)}
+.sel-dot.gagnant {background:var(--c-gagne)}
+.sel-dot.depasse{background:var(--amber)}
+.sel-dot.perdant{background:var(--red)}
+.sel-name{font-size:12px;flex:1;color:var(--c-attente)}
+.sel.tete    .sel-name{color:var(--c-tete);font-weight:500}
+.sel.gagnant .sel-name{color:var(--c-gagne);font-weight:600}
+.sel.gagnant .sel-name{color:var(--c-gagne);font-weight:500}
+.sel-pays{font-size:10px;color:var(--muted2)}
+.sel-t{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase}
+.sel-cote{font-size:10px;color:var(--muted2);padding:0 2px;flex-shrink:0}
+
+/* ── PROBA STRIP ── */
+.proba-strip{padding:5px 4px 6px;border-top:1px solid var(--border)}
+.proba-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.proba-bars{display:flex;gap:3px;align-items:flex-end;height:28px}
+.pb-col{display:flex;flex-direction:column;align-items:center;gap:1px;flex:1}
+.pb-bar{width:100%;border-radius:1px 1px 0 0;transition:height .3s}
+.pb-lbl{font-size:8px;color:var(--muted);white-space:nowrap}
+.pb-pct{font-size:8px;color:var(--muted2)}
+
+/* ── TCARD FOOT ── */
+.tcard-foot{display:flex;align-items:center;padding:5px 0;border-top:1px solid var(--border);gap:7px}
+.tcard-info{font-size:10px;color:var(--muted);flex:1}
+.tcard-badge{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:6px;border:1px solid transparent}
+.tcard-badge.win  {background:var(--green-bg);color:var(--green);border-color:#354d61}
+.tcard-badge.close{background:var(--c-tete-bg);color:var(--c-tete);border-color:var(--c-tete-border)}
+.tcard-badge.idle {background:var(--s2);color:var(--muted);border-color:var(--border2)}
+.tcard-unitaires{font-size:9px;color:var(--muted2)}
+.tcard-mise{font-size:9px;color:var(--muted);margin-left:auto}
+.tcard-gain-foot{font-size:10px;font-weight:600;color:var(--amber)}
+
+/* ── DEPLOYED ── */
+.deploy-toggle{display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px solid var(--border);cursor:pointer;background:transparent}
+.deploy-toggle:hover .deploy-label{color:var(--text)}
+.deploy-icon{font-size:9px;color:var(--muted)}
+.deploy-label{font-size:9px;color:var(--muted);letter-spacing:.04em}
+.deploy-label span{color:var(--muted2)}
+.deploy-gain{font-size:9px;font-weight:500;color:var(--muted2);margin-left:auto}
+
+.deployed-section{border-top:1px solid var(--border);padding-left:4px}
+.deploy-level{padding:6px 11px}
+.deploy-level-title{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.deploy-level-gain{font-size:9px;font-weight:600;color:var(--amber)}
+
+.ut-list{display:flex;flex-direction:column;gap:2px}
+.ut-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border:none;border-bottom:1px solid var(--border);background:transparent;font-size:10px;gap:8px}
+/* GAGNÉ — blanc */
+.ut-row.u-win{}
+.ut-row.u-win .ut-names{color:var(--c-gagne);font-weight:500}
+.ut-row.u-win .ut-gain{color:var(--c-gagne);font-weight:700}
+/* PROCHE — rose */
+.ut-row.u-close{}
+.ut-row.u-close .ut-names{color:var(--rose)}
+.ut-row.u-close .ut-gain{color:var(--rose);font-weight:600}
+/* VIVANT — gris clair, gain en gris moyen */
+.ut-row.u-live{}
+.ut-row.u-live .ut-names{color:var(--muted2)}
+.ut-row.u-live .ut-gain{color:var(--muted2);font-weight:500}
+/* MORT — orange, texte barré */
+.ut-row.u-dead{opacity:.5}
+.ut-row.u-dead .ut-names{text-decoration:line-through}
+.ut-row.u-dead .ut-gain{color:var(--c-mort)}
+/* DEFAULT */
+.ut-names{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ut-gain{color:var(--muted);font-size:10px;font-weight:500;flex-shrink:0;min-width:44px;text-align:right}
+/* ── TOOLTIP ── */
+.ut[data-tip]{cursor:default}
+.ut[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#111;border:1px solid var(--border2);color:var(--text);font-size:9px;padding:4px 7px;border-radius:3px;white-space:nowrap;z-index:100;pointer-events:none}
+
+/* ── LEGEND ── */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)}
+.leg-dot{width:6px;height:6px;border-radius:50%}
+.empty{color:var(--muted);padding:24px;text-align:center;font-size:12px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── MINI STATUT BOUTONS (inline dans tickets) ── */
+.sel-actions{display:flex;gap:2px;margin-left:auto;opacity:0;transition:opacity .15s}
+.sel:hover .sel-actions{opacity:1}
+.mini-sbtn{background:none;border:1px solid var(--border2);color:var(--muted);font-size:9px;font-weight:600;padding:1px 4px;border-radius:3px;cursor:pointer;transition:all .1s;min-width:16px;text-align:center}
+.mini-sbtn:hover{border-color:var(--muted2);color:var(--text)}
+.mini-sbtn.on-attente{color:var(--c-attente);border-color:var(--border2)}
+.mini-sbtn.on-tete   {color:var(--c-tete);border-color:var(--c-tete-border);background:var(--c-tete-bg)}
+.mini-sbtn.on-gagnant{color:var(--c-gagne);border-color:var(--c-gagne-border);background:var(--c-gagne-bg)}
+.mini-sbtn.on-depasse{color:var(--c-depasse);border-color:var(--c-depasse-border);background:var(--c-depasse-bg)}
+.mini-sbtn.on-perdant{color:var(--c-mort);border-color:var(--c-mort-border);background:var(--c-mort-bg)}
+
+/* ── Navigation & interactivité ── */
+.tete-pill:hover{filter:brightness(1.15);transition:filter .15s}
+.alert[onclick]{transition:opacity .1s}
+.alert[onclick]:hover{opacity:.85}
+.leg:hover span{color:var(--text)!important}
+.kpi[onclick]{cursor:pointer}
+.kpi[onclick]:hover{background:var(--s2)}
+/* Distinction renforcée gagnant dans les cards joueurs */
+.pcard.gagnant::after{content:'✓';position:absolute;right:8px;top:9px;font-size:10px;color:var(--c-gagne);font-weight:700}
+.pcard{position:relative}
+/* ── Analyse interactive (donut + barres) ── */
+.charts-wrap{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
+.chart-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;flex:1;min-width:270px}
+.chart-title{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chart-hint{font-weight:400;letter-spacing:0;text-transform:none;font-size:10px;color:var(--muted2);opacity:.7}
+.chart-flex{display:flex;gap:16px;align-items:center}
+.chart-legend{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.cleg{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;color:#888;padding:4px 8px;border-radius:6px;transition:all .15s;user-select:none}
+.cleg:hover{background:rgba(255,255,255,.04)}
+.cleg.on{color:var(--text);background:rgba(255,255,255,.07)}
+.cleg.dim{opacity:.35}
+.cleg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cleg-n{margin-left:auto;font-size:11px;color:var(--muted2);font-variant-numeric:tabular-nums}
+.cleg.on .cleg-n{color:var(--text)}
+.bar-row{display:flex;align-items:center;gap:10px;margin:9px 0}
+.bar-lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);width:62px;flex-shrink:0}
+.bar-track{flex:1;height:13px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.bar-val{font-size:12px;width:62px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.chart-reset{font-size:10px;color:#888;cursor:pointer;border:1px solid var(--border);border-radius:99px;padding:3px 10px;transition:all .15s;user-select:none;display:inline-flex;align-items:center;gap:4px}
+.chart-reset:hover{color:var(--text);border-color:var(--muted2)}
+/* ── Filtre drapeaux ── */
+.flag-row{display:flex;gap:9px;overflow-x:auto;align-items:flex-start;scrollbar-width:none}
+.flag-row::-webkit-scrollbar{display:none}
+.flag-chip{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;flex-shrink:0;opacity:.45;transition:opacity .2s,transform .12s;user-select:none;padding:2px 1px;-webkit-tap-highlight-color:transparent}
+.flag-chip:hover{opacity:.85}
+.flag-chip.active{opacity:1}
+.flag-chip:active{transform:scale(.9)}
+.fimg{width:36px;height:25px;object-fit:cover;display:block;border-radius:2px;
+  -webkit-mask-image:radial-gradient(ellipse 100% 100% at 50% 50%,#000 42%,rgba(0,0,0,.5) 70%,transparent 98%);
+  mask-image:radial-gradient(ellipse 100% 100% at 50% 50%,#000 42%,rgba(0,0,0,.5) 70%,transparent 98%);
+  filter:saturate(.7) brightness(.78);transition:filter .25s}
+.flag-chip.active .fimg{filter:saturate(1.05) brightness(1)}
+.flag-n{font-size:8.5px;color:var(--muted2);font-variant-numeric:tabular-nums;line-height:1}
+.flag-chip.active .flag-n{color:var(--rose)}
+.flag-bar{width:16px;height:2px;border-radius:99px;background:transparent;transition:background .2s}
+.flag-chip.active .flag-bar{background:var(--rose)}
+.flag-chip.reset{opacity:.6;width:36px;height:25px;border:1px dashed var(--border);border-radius:5px;align-items:center;justify-content:center;display:flex;flex-direction:row;color:#888;font-size:12px}
+.flag-chip.reset:hover{opacity:1;color:var(--text)}
+
+/* ── Paliers intermédiaires ── */
+.palier-strip{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 10px;border-top:1px solid var(--border)}
+.palier-strip-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);margin-right:2px}
+.palier-chip{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;padding:3px 8px;border-radius:4px;border:1px solid var(--border2);color:var(--muted2);background:var(--s2);line-height:1.2}
+.palier-chip .pk{font-weight:600;font-variant-numeric:tabular-nums}
+.palier-chip .pl{opacity:.85}
+.palier-gain{font-variant-numeric:tabular-nums;font-weight:600}
+.palier-chip.atteint{color:var(--c-gagne);border-color:var(--c-gagne-border);background:var(--c-gagne-bg)}
+.palier-chip.next{color:var(--c-tete);border-color:var(--c-tete-border);background:var(--c-tete-bg)}
+.palier-chip.mort{color:var(--c-mort);border-color:var(--c-mort-border);background:var(--c-mort-bg)}
+.palier-chip.mort .pk{text-decoration:line-through}
+.next-palier-mini{font-size:9px;color:var(--c-tete);white-space:nowrap}
+.palier-stack{display:flex;height:4px;border-radius:99px;overflow:hidden;gap:1px;margin:6px 10px 8px;background:rgba(255,255,255,.04)}
+.palier-stack>div{height:100%}
+.mini-rows{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.mini-row{display:flex;align-items:center;gap:8px;font-size:11px;color:#888;cursor:pointer;user-select:none;padding:2px 4px;border-radius:5px;transition:background .15s}
+.mini-row:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.mini-lbl{width:96px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+.mini-fill{height:100%;border-radius:99px}
+.mini-val{flex-shrink:0;font-size:10px;font-variant-numeric:tabular-nums;min-width:62px;text-align:right;color:#888}
+.p-mini-track{height:3px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-top:5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">WC 2026</div>
+  <div class="h-stats" id="hStats"></div>
+  <div style="display:flex;align-items:center;gap:10px;margin-left:12px">
+    <span id="syncIndicator" style="font-size:10px;letter-spacing:.08em;color:#555">● sync</span>
+    <button onclick="refreshFromAPIFootball()" style="background:none;border:1px solid #222;color:#555;font-size:10px;letter-spacing:.08em;padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .1s" onmouseover="this.style.color='#f0a8c0';this.style.borderColor='#f0a8c0'" onmouseout="this.style.color='#555';this.style.borderColor='#222'">↻ Refresh</button>
+  </div>
+</header>
+<nav>
+  <button class="active" onclick="goTab('dash',this)">Vue d'ensemble</button>
+  <button onclick="goTab('joueurs',this)">Joueurs</button>
+  <button onclick="goTab('tickets',this)">Tickets</button>
+  <button onclick="goTab('alertes',this)">Alertes</button>
+  <div class="nav-sep"></div>
+  <button class="expand-all-btn" onclick="toggleAll()">⊞ Tout déployer</button>
+</nav>
+<main>
+  <div id="dash"    class="tab active"></div>
+  <div id="joueurs" class="tab"></div>
+  <div id="tickets" class="tab"></div>
+  <div id="alertes" class="tab"></div>
+</main>
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">WC 2026</div>
+  <div class="h-stats" id="hStats"></div>
+  <div style="display:flex;align-items:center;gap:10px;margin-left:12px">
+    <span id="syncIndicator" style="font-size:10px;letter-spacing:.08em;color:#555">● sync</span>
+    <button onclick="refreshFromAPIFootball()" style="background:none;border:1px solid #222;color:#555;font-size:10px;letter-spacing:.08em;padding:3px 8px;border-radius:3px;cursor:pointer;transition:all .1s" onmouseover="this.style.color='#f0a8c0';this.style.borderColor='#f0a8c0'" onmouseout="this.style.color='#555';this.style.borderColor='#222'">↻ Refresh</button>
+  </div>
+</header>
+<nav>
+  <button class="active" onclick="goTab('dash',this)">Vue d'ensemble</button>
+  <button onclick="goTab('joueurs',this)">Joueurs</button>
+  <button onclick="goTab('tickets',this)">Tickets</button>
+  <button onclick="goTab('alertes',this)">Alertes</button>
+  <div class="nav-sep"></div>
+  <button class="expand-all-btn" onclick="toggleAll()">⊞ Tout déployer</button>
+</nav>
+<main>
+  <div id="dash"    class="tab active"></div>
+  <div id="joueurs" class="tab"></div>
+  <div id="tickets" class="tab"></div>
+  <div id="alertes" class="tab"></div>
+</main>
+<script>
+// ══════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════
+// Cotes par type (buteur/passeur) — priorité sur COTES_MAP
+const COTES_TYPED = {
+  "mbappe|passeur":3.25,"gakpo|passeur":3.25,
+  "bruno fernandes|buteur":4,"almirón|buteur":6,"almiron|buteur":6,
+  "messi|buteur":2,"diomande|buteur":7,"olise|buteur":8,"raphina|buteur":4,
+  "jordan ayew|buteur":6,"ante budimir|buteur":6,"elye wahi|buteur":8,
+  "ermedin demirovic|buteur":4.5,"kai havertz|passeur":8,
+  "aymen hussein|buteur":3.5,"anthony gordon|passeur":15,
+  // Passeurs — cotes différentes des buteurs
+  "olise|passeur":2.5,"raphina|passeur":3.5,"saka|passeur":4,
+  "dani olmo|passeur":5,"musiala|passeur":5,"gakpo|passeur":3.25,
+  "florian wirtz|passeur":4,"vini|passeur":4,"nico williams|passeur":10,
+  "leroy sane|passeur":10,"memphis depay|passeur":6,"olise|buteur":8,
+  // Buteurs
+  "embolo|buteur":3.25,"alvarez|buteur":4.5,"akturkoglu|buteur":6,
+  "gakpo|buteur":3.5,"semenyo|buteur":3.5,"saka|buteur":4,
+  "raphina|buteur":4,"florian wirtz|buteur":6,"amad diallo|buteur":5.5,
+  "elanga|buteur":12,"bakambu|buteur":3.75,"inaki williams|buteur":11,
+  "leao|buteur":12,"mane|buteur":4,"neymar|buteur":10,"david|buteur":2.25,
+  "vini|buteur":3.5,"memphis depay|buteur":6,"edin dzeko|buteur":3.25,
+  "ayase ueda|buteur":4,"darwin nunez|buteur":3,"balogun|buteur":4,
+  "perisic|buteur":7,"gordon|buteur":20,"santiago gimenez|buteur":4.5,
+  "de arrascaeta|buteur":3.25,"saibari|buteur":8,"abdul fatawu|buteur":11,
+  "oluwaseyi|buteur":12,"lukaku|buteur":2.5,"dani olmo|buteur":10,
+  "ismaila sarr|buteur":9,"kramaric|buteur":4,"simon banza|buteur":13,
+  "woltemade|buteur":8,"dan ndoye|buteur":7,"ricardo pepi|buteur":7,
+  "summerville|buteur":15,"evidence  makgopa|buteur":9,"kastaneer|buteur":12,
+  "brahim diaz|buteur":3.5,"shomurodov|buteur":3.5,"ismael diaz |buteur":9,
+  "ali olwan|buteur":4,"kai havertz|buteur":3.25,"nicolas jackson|buteur":5,
+  "omar marmoush|buteur":4.5,"nestory irankunda|buteur":7,
+  "ayoub el kaabi|buteur":4,"duckens nazon|buteur":12,"raul jimenez|buteur":3.5,
+  "hazel mastouri|buteur":8,"livramento|buteur":6,"diomande|buteur":9,
+  "salem al dawsari|buteur":8,"malen|buteur":5,"doku|buteur":8,
+  "amir al ammari|buteur":15,"hwang hee chan|buteur":3.5,"suarez|buteur":4,
+  "isak|buteur":5,"trezeguet|buteur":8,"gregoritsch|buteur":4,
+  "ayew|buteur":6,"lukic|buteur":20,"cho gue sung|buteur":7.5,
+  "semedo|buteur":20,"waterman |buteur":6.5,"sorloth|buteur":8,
+  "jordy caceido|buteur":10,"frantzy pierrot|buteur":10,
+  "promise david|buteur":13,"appolis|buteur":8,"gouiri|buteur":5,
+  "toure|buteur":5,"shankland|buteur":6,"pavel sulc|buteur":9,
+  "che adams|buteur":5.5,"musiala|buteur":5,"nico williams|buteur":10,
+  "tahith chong|buteur":5,"jean duverne|buteur":50,
+  "milos degenek|buteur":25,"yoel barcenas|buteur":20,
+};
+
+function getCote(joueur, type) {
+  const n = joueur.trim().toLowerCase();
+  const t = (type||'').trim().toLowerCase();
+  if(t && COTES_TYPED[n+'|'+t]) return COTES_TYPED[n+'|'+t];
+  // fallback sans type
+  const bt = COTES_TYPED[n+'|buteur'];
+  const pt = COTES_TYPED[n+'|passeur'];
+  return bt || pt || null;
+}
+
+// ══════════════════════════════════════════════════════════
+// CANONICALISATION PAYS / JOUEURS + DRAPEAUX + GRAPHIQUES
+// ══════════════════════════════════════════════════════════
+var CANON_PAYS={
+  'france':['France','fr'],'espagne':['Espagne','es'],'allemagne':['Allemagne','de'],
+  'portugal':['Portugal','pt'],'bresil':['Brésil','br'],'argentine':['Argentine','ar'],
+  'angleterre':['Angleterre','gb-eng'],'ecosse':['Écosse','gb-sct'],'pays de galles':['Pays de Galles','gb-wls'],
+  'italie':['Italie','it'],'belgique':['Belgique','be'],
+  'pays bas':['Pays-Bas','nl'],'hollande':['Pays-Bas','nl'],
+  'maroc':['Maroc','ma'],'senegal':['Sénégal','sn'],
+  'usa':['USA','us'],'etats unis':['USA','us'],
+  'mexique':['Mexique','mx'],'canada':['Canada','ca'],'japon':['Japon','jp'],
+  'australie':['Australie','au'],'suisse':['Suisse','ch'],'croatie':['Croatie','hr'],
+  'serbie':['Serbie','rs'],'pologne':['Pologne','pl'],'danemark':['Danemark','dk'],
+  'colombie':['Colombie','co'],'equateur':['Équateur','ec'],'uruguay':['Uruguay','uy'],
+  'chili':['Chili','cl'],'ghana':['Ghana','gh'],'nigeria':['Nigeria','ng'],
+  'cameroun':['Cameroun','cm'],'egypte':['Égypte','eg'],'algerie':['Algérie','dz'],
+  'tunisie':['Tunisie','tn'],'iran':['Iran','ir'],'arabie saoudite':['Arabie Saoudite','sa'],
+  'qatar':['Qatar','qa'],'curacao':['Curaçao','cw'],'haiti':['Haïti','ht'],
+  'panama':['Panama','pa'],'suede':['Suède','se'],'autriche':['Autriche','at'],
+  'turquie':['Turquie','tr'],'tchequie':['Tchéquie','cz'],'republique tcheque':['Tchéquie','cz'],
+  'bosnie':['Bosnie','ba'],'bosnie herzegovine':['Bosnie','ba'],
+  'jordanie':['Jordanie','jo'],'irak':['Irak','iq'],'cap vert':['Cap-Vert','cv'],
+  'congo':['RD Congo','cd'],'rdc':['RD Congo','cd'],'rd congo':['RD Congo','cd'],
+  'ouzbekistan':['Ouzbékistan','uz'],
+  'coree':['Corée du Sud','kr'],'coree du sud':['Corée du Sud','kr'],
+  'norvege':['Norvège','no'],'afrique du sud':['Afrique du Sud','za'],
+  'cote ivoire':["Côte d'Ivoire",'ci'],"cote d'ivoire":["Côte d'Ivoire",'ci'],'cote d ivoire':["Côte d'Ivoire",'ci'],
+  'paraguay':['Paraguay','py']
+};
+function paysKeyNorm(s){return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[-_]/g,' ').replace(/\s+/g,' ');}
+function canonPays(p){var e=CANON_PAYS[paysKeyNorm(p)];return e?e[0]:(p||'').trim().replace(/\s+/g,' ');}
+function paysIso(p){var e=CANON_PAYS[paysKeyNorm(p)];return e?e[1]:null;}
+function canonJoueur(j){return (j||'').trim().replace(/\s+/g,' ').split(' ').map(function(w){return w?w.charAt(0).toUpperCase()+w.slice(1):w;}).join(' ');}
+function isoToEmoji(iso){
+  if(!iso)return'\uD83C\uDFF3\uFE0F';
+  if(iso==='gb-eng')return'\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC65\uDB40\uDC6E\uDB40\uDC67\uDB40\uDC7F';
+  if(iso==='gb-sct')return'\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC73\uDB40\uDC63\uDB40\uDC74\uDB40\uDC7F';
+  if(iso==='gb-wls')return'\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC77\uDB40\uDC6C\uDB40\uDC73\uDB40\uDC7F';
+  return iso.toUpperCase().split('').map(function(c){return String.fromCodePoint(127397+c.charCodeAt(0));}).join('');
+}
+function flagHTML(pays,cls){
+  // Country code badge — no emoji flags
+  var iso=paysIso(pays);
+  var code=iso?iso.toUpperCase().replace('GB-ENG','ENG').replace('GB-SCT','SCO').replace('GB-WLS','WAL'):(pays||'').trim().substring(0,3).toUpperCase();
+  return '<span class="cbadge">' + code + '</span>';
+}
+var ST_PRIORITY={gagnant:6,perdant:5,tete:4,exaequo:4,depasse:2,attente:1};
+function mergeStatut(a,b){if(!a)return b;if(!b)return a;return (ST_PRIORITY[b]||0)>(ST_PRIORITY[a]||0)?b:a;}
+// ── SVG donut + barres (sans dépendance) ──
+function _arcPath(cx,cy,r,ir,a0,a1){
+  if(a1-a0>6.282)a1=a0+6.282;
+  var x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+  var xi1=cx+ir*Math.cos(a1),yi1=cy+ir*Math.sin(a1),xi0=cx+ir*Math.cos(a0),yi0=cy+ir*Math.sin(a0);
+  var lg=(a1-a0)>Math.PI?1:0;
+  return 'M'+x0.toFixed(2)+' '+y0.toFixed(2)+' A'+r+' '+r+' 0 '+lg+' 1 '+x1.toFixed(2)+' '+y1.toFixed(2)+
+    ' L'+xi1.toFixed(2)+' '+yi1.toFixed(2)+' A'+ir+' '+ir+' 0 '+lg+' 0 '+xi0.toFixed(2)+' '+yi0.toFixed(2)+' Z';
+}
+function donutSVG(data,selKey,cbName,centerTop,centerSub){
+  var total=0,nSeg=0;
+  data.forEach(function(d){total+=d.value;if(d.value>0)nSeg++;});
+  var a=-Math.PI/2,paths='';
+  if(total>0){
+    var g=nSeg>1?0.035:0;
+    data.forEach(function(d){
+      if(!d.value)return;
+      var a1=a+(d.value/total)*Math.PI*2;
+      var dim=selKey&&selKey!==d.key;
+      paths+='<path d="'+_arcPath(75,75,66,46,a+g,a1-g)+'" fill="'+d.color+'" opacity="'+(dim?0.22:1)+'" style="cursor:pointer;transition:opacity .25s" onclick="'+cbName+'(\''+d.key+'\')"><title>'+d.label+' : '+d.value+'</title></path>';
+      a=a1;
+    });
+  } else {
+    paths='<circle cx="75" cy="75" r="56" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="20"/>';
+  }
+  return '<svg viewBox="0 0 150 150" style="width:138px;height:138px;flex-shrink:0">'+paths+
+    '<text x="75" y="74" text-anchor="middle" style="fill:var(--text);font-size:27px;font-weight:300;font-family:inherit">'+centerTop+'</text>'+
+    '<text x="75" y="92" text-anchor="middle" style="fill:#8a8580;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase">'+centerSub+'</text></svg>';
+}
+function barsHTML(items){
+  var maxV=1;
+  items.forEach(function(b){if(Math.abs(b.value)>maxV)maxV=Math.abs(b.value);});
+  return items.map(function(b){
+    var sign=(b.signed&&b.value>0)?'+':'';
+    return '<div class="bar-row"><span class="bar-lbl">'+b.label+'</span><div class="bar-track"><div class="bar-fill" style="width:'+(Math.abs(b.value)/maxV*100).toFixed(1)+'%;background:'+b.color+'"></div></div><span class="bar-val" style="color:'+b.color+'">'+sign+Math.round(b.value)+'€</span></div>';
+  }).join('');
+}
+
+const RAW = {"tickets":[{"id":"1780912418417","nom":"37k","systeme":"1/4","selections":[{"joueur":"Tahith Chong","pays":"Curaçao ","type":"buteur"},{"joueur":"Jean Duverne","pays":"Haiti","type":"buteur"},{"joueur":"Milos Degenek","pays":"Australie ","type":"buteur"},{"joueur":"Yoel Barcenas","pays":"Panama","type":"buteur"}]},{"id":"1780912568126","nom":"104k","systeme":"5/8","selections":[{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur"},{"joueur":"Semenyo","pays":"Ghana","type":"buteur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Nico williams","pays":"Espagne","type":"passeur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"}]},{"id":"1780913108621","nom":"135k","systeme":"5/7","selections":[{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Che adams","pays":"Ecosse","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Elanga","pays":"Suede ","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"}]},{"id":"1780913833293","nom":"142k","systeme":"5/7","selections":[{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Inaki williams","pays":"Ghana","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur","cote":4},{"joueur":"Leao","pays":"Portugal","type":"buteur"},{"joueur":"Mane","pays":"Senegal","type":"buteur"},{"joueur":"Neymar","pays":"Bresil","type":"buteur"}]},{"id":"1780914410391","nom":"61k","systeme":"4/7","selections":[{"joueur":"Pavel Sulc","pays":"Tchéquie ","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"David","pays":"Canada","type":"buteur"},{"joueur":"Vini","pays":"Brésil ","type":"passeur"},{"joueur":"Nico Williams","pays":"Espagne","type":"passeur"},{"joueur":"Leroy Sane","pays":"Allemagne","type":"passeur"},{"joueur":"Memphis Depay","pays":"Pays-Bas ","type":"buteur"}]},{"id":"1780915352968","nom":"11k","systeme":"5/7","selections":[{"joueur":"Che adams","pays":"Ecosse","type":"buteur"},{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Perisic","pays":"Croatie","type":"buteur"}]},{"id":"1780915476330","nom":"70k Soso","systeme":"4/6","selections":[{"joueur":"Anthony Gordon","pays":"Angleterre","type":"buteur"},{"joueur":"Santiago Gimenez","pays":"Mexique","type":"buteur"},{"joueur":"De Arrascaeta","pays":"Uruguay ","type":"buteur"},{"joueur":"Saibari","pays":"Maroc","type":"buteur"},{"joueur":"Abdul Fatawu","pays":"Ghana","type":"buteur"},{"joueur":"Oluwaseyi","pays":"Canada","type":"buteur"}]},{"id":"1780915596360","nom":"15k Soso","systeme":"3/6","selections":[{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Lukaku","pays":"Belgique","type":"buteur"},{"joueur":"Dani Olmo","pays":"Espagne","type":"buteur"},{"joueur":"Ismaila Sarr","pays":"Senegal ","type":"buteur"},{"joueur":"Kramaric","pays":"Croatie","type":"buteur"},{"joueur":"Simon Banza","pays":"RDC","type":"buteur"}]},{"id":"1780915778731","nom":"43k Soso","systeme":"3/6","selections":[{"joueur":"Vini","pays":"Brésil ","type":"buteur"},{"joueur":"Woltemade","pays":"Allemagne ","type":"buteur"},{"joueur":"Dan Ndoye","pays":"Suisse","type":"buteur"},{"joueur":"Ricardo Pepi","pays":"USA","type":"buteur"},{"joueur":"Summerville","pays":"Pays bas","type":"buteur"},{"joueur":"Evidence  Makgopa","pays":"Afrique du Sud ","type":"buteur"}]},{"id":"1780915923073","nom":"72k","systeme":"4/7","selections":[{"joueur":"Kastaneer","pays":"Curaçao ","type":"buteur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"},{"joueur":"Shomurodov","pays":"Ouzbékistan ","type":"buteur"},{"joueur":"Ismael Diaz ","pays":"Panama","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Neymar","pays":"Bresil","type":"buteur"}]},{"id":"1780916111231","nom":"41k","systeme":"6/8","selections":[{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Omar Marmoush","pays":"Egypte","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur"},{"joueur":"Nestory Irankunda","pays":"Australie","type":"buteur"},{"joueur":"Ayoub El Kaabi","pays":"Maroc","type":"buteur"}]},{"id":"1780916256285","nom":"151k","systeme":"3/7","selections":[{"joueur":"Duckens Nazon","pays":"Haiti","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Kastaneer","pays":"Curaçao ","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"}]},{"id":"1780916371909","nom":"193k","systeme":"4/7","selections":[{"joueur":"Duckens Nazon","pays":"Haiti","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Ismael Diaz ","pays":"Panama","type":"buteur"},{"joueur":"Appolis","pays":"Afrique du Sud ","type":"buteur"},{"joueur":"Gouiri","pays":"Algérie ","type":"buteur"},{"joueur":"Hwang Hee Chan","pays":"Corée du Sud ","type":"buteur"}]},{"id":"1780916589069","nom":"52k","systeme":"3/7","selections":[{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Doku","pays":"Belgique","type":"buteur"}]},{"id":"1780916704340","nom":"45k","systeme":"3/6","selections":[{"joueur":"Amir Al Ammari","pays":"Irak","type":"buteur"},{"joueur":"Nestory Irankunda","pays":"Australie","type":"buteur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"}]},{"id":"1780916791408","nom":"139k","systeme":"5/8","selections":[{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Kastaneer","pays":"Curaçao ","type":"buteur"},{"joueur":"Doku","pays":"Belgique","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur"}]},{"id":"1780916865071","nom":"1k","systeme":"3/6","selections":[{"joueur":"Olise","pays":"France","type":"passeur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Dani Olmo","pays":"Espagne","type":"passeur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Gakpo","pays":"Pays bas","type":"passeur"}]},{"id":"1780918963594","nom":"4k","systeme":"3/6","selections":[{"joueur":"Raphina","pays":"Bresil","type":"passeur"},{"joueur":"Hwang Hee Chan","pays":"Corée du Sud ","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Ayoub El Kaabi","pays":"Maroc","type":"buteur"},{"joueur":"Memphis Depay","pays":"Pays-Bas ","type":"passeur"},{"joueur":"Kramaric","pays":"Croatie","type":"buteur"}]},{"id":"1780923964154","nom":"3k","systeme":"4/6","selections":[{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Suarez","pays":"Colombie","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"},{"joueur":"Nico williams","pays":"Espagne","type":"passeur"},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"passeur"}]},{"id":"1780990243085","nom":"9k","systeme":"4/6","selections":[{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Isak","pays":"Suede ","type":"buteur"},{"joueur":"Trezeguet","pays":"Egypte","type":"buteur"},{"joueur":"Gregoritsch","pays":"Autriche","type":"buteur"},{"joueur":"Jordan Ayew","pays":"Ghana","type":"buteur"}]},{"id":"1780991467595","nom":"26k","systeme":"2/5","selections":[{"joueur":"Lukic","pays":"Bosnie","type":"buteur"},{"joueur":"Cho Gue sung","pays":"Corée ","type":"buteur"},{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Semedo","pays":"Cap-Vert","type":"buteur"},{"joueur":"Waterman ","pays":"Panama","type":"buteur"}]},{"id":"1781000840739","nom":"14k","systeme":"2/5","selections":[{"joueur":"Olise","pays":"France","type":"buteur"},{"joueur":"Sorloth","pays":"Norvège ","type":"buteur"},{"joueur":"Jordy Caceido","pays":"Équateur ","type":"buteur"},{"joueur":"Frantzy Pierrot","pays":"Haiti","type":"buteur"},{"joueur":"Promise David","pays":"Canada ","type":"buteur"}]},{"id":"1781005723717","nom":"2k","systeme":"4/6","selections":[{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Mane","pays":"Senegal","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"}]},{"id":"1781005800637","nom":"2k7","systeme":"4/6","selections":[{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"}]},{"id":"1781005886695","nom":"12k","systeme":"4/6","selections":[{"joueur":"Ismael Diaz ","pays":"Panama","type":"buteur"},{"joueur":"Doku","pays":"Belgique","type":"buteur"},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Raul Jimenez","pays":"Mexique","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Nestory Irankunda","pays":"Australie","type":"buteur"}]},{"id":"1781005943922","nom":"0.5k","systeme":"2/5","selections":[{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"}]},{"id":"1781005992395","nom":"0.7k","systeme":"2/5","selections":[{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"}]},{"id":"1781006036665","nom":"0.3k","systeme":"2/5","selections":[{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Livramento","pays":"Cap Vert","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"}]},{"id":"1781006148636","nom":"0.9k","systeme":"2/5","selections":[{"joueur":"Edin Dzeko","pays":"Bosnie","type":"buteur"},{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Hazel Mastouri","pays":"Tunisie","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Saka","pays":"Angleterre","type":"passeur"}]},{"id":"1781011024124","nom":"0.4k","systeme":"2/5","selections":[{"joueur":"Amad Diallo","pays":"Côte ivoire ","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Balogun","pays":"USA","type":"buteur"},{"joueur":"Bakambu","pays":"Congo","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"}]},{"id":"1781011090634","nom":"0.6k","systeme":"2/5","selections":[{"joueur":"Florian Wirtz","pays":"Allemagne","type":"buteur"},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur"},{"joueur":"Darwin Nunez","pays":"Uruguay ","type":"buteur"},{"joueur":"Salem Al Dawsari","pays":"Arabie Saoudite","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"passeur"}]},{"id":"1781011197445","nom":"35k","systeme":"3/7","selections":[{"joueur":"Pavel Sulc","pays":"Tchequie","type":"buteur"},{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"},{"joueur":"Alvarez","pays":"Argentine","type":"buteur"},{"joueur":"Akturkoglu","pays":"Turquie","type":"buteur"},{"joueur":"Gakpo","pays":"Pays bas","type":"buteur"},{"joueur":"Ali Olwan","pays":"Jordanie","type":"buteur"}]},{"id":"1781044087642","nom":"77k77","systeme":"3/7","selections":[{"joueur":"Toure","pays":"Australie","type":"buteur"},{"joueur":"Shankland","pays":"Écosse","type":"buteur"},{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Trezeguet","pays":"Egypte","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Nicolas Jackson","pays":"Senegal ","type":"buteur"},{"joueur":"Sorloth","pays":"Norvège ","type":"buteur"}]},{"id":"1781200000001","nom":"289kZeBigOne","systeme":"2/9","selections":[{"joueur":"Vini","pays":"Brésil","type":"buteur","cote":3.5},{"joueur":"Olise","pays":"France","type":"buteur","cote":8},{"joueur":"Ayase Ueda","pays":"Japon","type":"buteur","cote":4},{"joueur":"Embolo","pays":"Suisse","type":"buteur","cote":3.25},{"joueur":"Balogun","pays":"USA","type":"buteur","cote":4},{"joueur":"Gakpo","pays":"Pays-Bas","type":"buteur","cote":3.5},{"joueur":"Suarez","pays":"Colombie","type":"buteur","cote":4},{"joueur":"Saka","pays":"Angleterre","type":"passeur","cote":4},{"joueur":"Florian Wirtz","pays":"Allemagne","type":"passeur","cote":4.5}]},{"id":"1781200000002","nom":"4.5k","systeme":"3/6","selections":[{"joueur":"Olise","pays":"France","type":"buteur","cote":8},{"joueur":"Kai Havertz","pays":"Allemagne","type":"buteur","cote":3.25},{"joueur":"Embolo","pays":"Suisse","type":"buteur","cote":3.25},{"joueur":"Saibari","pays":"Maroc","type":"buteur","cote":8},{"joueur":"Saka","pays":"Angleterre","type":"passeur","cote":4},{"joueur":"Gakpo","pays":"Pays-Bas","type":"passeur","cote":5}]},{"id":"1781400000001","nom":"97k","systeme":"3/7","selections":[{"joueur":"Gakpo","pays":"Pays bas","type":"passeur"},{"joueur":"Kai Havertz","pays":"Allemagne","type":"passeur"},{"joueur":"Mbappe","pays":"France","type":"passeur"},{"joueur":"Jordan Ayew","pays":"Ghana","type":"buteur"},{"joueur":"Ante Budimir","pays":"Croatie","type":"buteur"},{"joueur":"Elye Wahi","pays":"Cote ivoire","type":"buteur"},{"joueur":"Ermedin Demirovic","pays":"Bosnie","type":"buteur"}]},{"id":"1781400000002","nom":"26k","systeme":"4/7","selections":[{"joueur":"Musiala","pays":"Allemagne","type":"passeur"},{"joueur":"Aymen Hussein","pays":"Irak","type":"buteur"},{"joueur":"Anthony Gordon","pays":"Angleterre","type":"passeur"},{"joueur":"Brahim Diaz","pays":"Maroc","type":"buteur"},{"joueur":"Malen","pays":"Pays Bas","type":"buteur"},{"joueur":"Kramaric","pays":"Croatie","type":"buteur"},{"joueur":"Embolo","pays":"Suisse","type":"buteur"}]},{"id":"1781400000003","nom":"4kNono","systeme":"3/6","selections":[{"joueur":"Diomande","pays":"Cote ivoire","type":"buteur"},{"joueur":"Bruno Fernandes","pays":"Portugal","type":"buteur"},{"joueur":"Olise","pays":"France","type":"buteur"},{"joueur":"Raphina","pays":"Bresil","type":"buteur"},{"joueur":"Almirón","pays":"Paraguay","type":"buteur"},{"joueur":"Messi","pays":"Argentine","type":"buteur"}]}],"players":{"Raul Jimenez|Mexique|buteur":"tete","Embolo|Suisse|buteur":"attente","Akturokoglu|Turquie|buteur":"attente","Gakpo|Pays bas|buteur":"attente","Semenyo|Ghana|buteur":"attente","Saka|Angleterre|passeur":"attente","Nico williams|Espagne|passeur":"attente","Musiala|Allemagne|passeur":"attente","Gakpo|Pays-bas|buteur":"attente","Diomande|Cote ivoire|buteur":"attente","Salem Al Dawsari|Arabie Saoudite|buteur":"attente","Alvarez|Argentine|buteur":"attente","Akturkoglu|Turquie|buteur":"attente","che adams|ecosse|buteur":"attente","embolo|suisse|buteur":"attente","musiala|allemagne|passeur":"attente","edin dzeko|bosnie|buteur":"attente","kramaric|croatie|buteur":"attente","gordon|angleterre|buteur":"attente","raphina|bresil|passeur":"attente","raul jimenez|mexique|buteur":"attente","duckens nazon|haiti|buteur":"attente","alvarez|argentine|buteur":"attente","akturkoglu|turquie|buteur":"attente","gakpo|pays bas|buteur":"attente","bakambu|congo|buteur":"attente","darwin nunez|uruguay|buteur":"attente","kai havertz|allemagne|buteur":"attente","saka|angleterre|passeur":"attente","balogun|usa|buteur":"attente","ayase ueda|japon|buteur":"attente","nicolas jackson|senegal|buteur":"attente","brahim diaz|maroc|buteur":"attente","raphina|bresil|buteur":"attente","hazel mastouri|tunisie|buteur":"attente","pavel sulc|tchequie|buteur":"attente","david|canada|buteur":"attente","florian wirtz|allemagne|buteur":"attente","trezeguet|egypte|buteur":"attente","malen|pays bas|buteur":"attente","lukic|bosnie|buteur":"attente","sorloth|norvege|buteur":"attente","olise|france|passeur":"attente","gakpo|pays bas|passeur":"attente","olise|france|buteur":"attente","saibari|maroc|buteur":"attente","Gakpo|Pays bas|passeur":"attente","Kai Havertz|Allemagne|passeur":"attente","Mbappe|France|passeur":"attente","Jordan Ayew|Ghana|buteur":"attente","Ante Budimir|Croatie|buteur":"attente","Elye Wahi|Cote ivoire|buteur":"attente","Ermedin Demirovic|Bosnie|buteur":"attente","Aymen Hussein|Irak|buteur":"attente","Anthony Gordon|Angleterre|passeur":"attente","Brahim Diaz|Maroc|buteur":"attente","Malen|Pays Bas|buteur":"attente","Kramaric|Croatie|buteur":"attente","Bruno Fernandes|Portugal|buteur":"attente","Almirón|Paraguay|buteur":"attente","Messi|Argentine|buteur":"attente"}};
+
+// ── Nettoyage des données : 1 seule fiche par joueur/pays/type ──
+RAW.tickets.forEach(t=>t.selections.forEach(s=>{s.joueur=canonJoueur(s.joueur);s.pays=canonPays(s.pays);}));
+
+// ══════════════════════════════════════════════════════════
+// COMBINATORICS
+// ══════════════════════════════════════════════════════════
+function combN(n,k){if(k>n||k<0)return 0;if(k===0||k===n)return 1;let r=1;for(let i=0;i<k;i++)r=r*(n-i)/(i+1);return Math.round(r);}
+function combinations(arr,k){if(k===0)return[[]];if(arr.length<k)return[];const[f,...r]=arr;return[...combinations(r,k-1).map(c=>[f,...c]),...combinations(r,k)];}
+function countUnitaires(sys){const[k,n]=sys.split('/').map(Number);let t=0;for(let i=k;i<=n;i++)t+=combN(n,i);return t;}
+function getDeployedCombos(ticket){const[kMin,n]=ticket.systeme.split('/').map(Number);const combos=[];for(let k=kMin;k<=n;k++)combinations(ticket.selections,k).forEach(c=>combos.push({k,sels:c}));return combos;}
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let P={};
+const T=RAW.tickets;
+const STATUTS=['attente','tete','gagnant','depasse','perdant'];
+const LABELS={attente:'Attente',tete:'En tête',gagnant:'Gagnant',depasse:'Dépassé',perdant:'Perdant'};
+let DEPLOY_STATE={};// id -> true/false
+let DASH_SEL=null;   // statut sélectionné dans le donut (cross-filter Power BI)
+let TCOUNTRY=null;   // pays sélectionné dans le filtre drapeaux
+function dashSelect(k){DASH_SEL=(DASH_SEL===k||!k)?null:k;renderDash();}
+function setCountry(k){TCOUNTRY=(TCOUNTRY===k||!k)?null:k;renderTickets();}
+function tCat(t){const g=ticketGains(t);if(g.allDead)return'mort';if(isGagne(t))return'gagne';if(isWin(t))return'vivant';if(isClose(t))return'proche';return'encours';}
+// ── PALIERS INTERMÉDIAIRES DE GAINS ──────────────────────
+// Pour chaque palier k (de kMin à n) : gains du SEUL niveau k (pas cumulés),
+// joueurs manquants pour l'atteindre, état (atteint / en jeu / mort).
+function palierData(t){
+  const[kMin,n]=t.systeme.split('/').map(Number);
+  const ac=activeCount(t);
+  const aliveN=t.selections.filter(s=>status(s.joueur,s.pays,s.type)!=='perdant').length;
+  const levels=[];
+  for(let k=kMin;k<=n;k++){
+    let pot=0,acquis=0,morts=0,nb=0;
+    combinations(t.selections,k).forEach(sels=>{
+      nb++;
+      const cs=comboStatus(sels);
+      if(cs==='dead'){morts++;return;}
+      const g=comboGainTotal(sels);
+      if(g===null)return;
+      if(cs==='finalized')acquis+=g;else pot+=g;
+    });
+    levels.push({k,n,manque:Math.max(0,k-ac),atteint:ac>=k,mort:aliveN<k,pot,acquis,morts,nb});
+  }
+  const next=levels.find(l=>!l.atteint&&!l.mort)||null; // prochain palier accessible
+  const reached=levels.filter(l=>l.atteint&&!l.mort).pop()||null;
+  return{levels,next,reached,ac,kMin,n,aliveN};
+}
+// Texte compact "manque X pour k/n · +Y€ au palier"
+function nextPalierStr(pd,short){
+  if(!pd.next)return'';
+  const l=pd.next;
+  return short
+    ?`→ ${l.k}/${l.n} · −${l.manque}j · +${fmt(l.pot)}`
+    :`<span class="hi">manque ${l.manque} pour le palier ${l.k}/${l.n}</span> · <span style="color:var(--c-tete)">+${fmt(l.pot)} au palier</span>`;
+}
+// Chips de paliers pour une carte ticket
+function palierChips(pd){
+  return'<div class="palier-strip"><span class="palier-strip-lbl">Paliers</span>'+pd.levels.map(l=>{
+    const cls=l.mort?'mort':l.atteint?'atteint':(pd.next&&l.k===pd.next.k?'next':'');
+    const lbl=l.mort?'mort':l.atteint?'✓':'−'+l.manque+'j';
+    const amt=l.mort?'':(l.acquis>0?fmt(l.acquis)+(l.pot>0?' <span style="opacity:.7">+'+fmt(l.pot)+'</span>':''):'+'+fmt(l.pot));
+    return`<div class="palier-chip ${cls}" title="Palier ${l.k}/${l.n} · ${l.nb} combinaison${l.nb>1?'s':''}${l.morts?' · '+l.morts+' morte'+(l.morts>1?'s':''):''}${l.atteint?' · atteint':l.mort?' · mort':' · il manque '+l.manque+' joueur'+(l.manque>1?'s':'')}"><span class="pk">${l.k}/${l.n}</span><span class="pl">${lbl}</span>${amt?`<span class="palier-gain">${amt}</span>`:''}</div>`;
+  }).join('')+'</div>'+palierStack(pd);
+}
+// Micro-barre : où se situe le potentiel restant (par palier)
+function palierStack(pd){
+  let tot=0;pd.levels.forEach(l=>{tot+=l.pot+l.acquis;});
+  if(tot<=0)return'';
+  const segs=pd.levels.map(l=>{
+    const v=l.pot+l.acquis;if(v<=0)return'';
+    const col=l.atteint?'#d4789a':(pd.next&&l.k===pd.next.k?'#f0a8c0':'#454545');
+    return`<div style="width:${(v/tot*100).toFixed(2)}%;background:${col}" title="${l.k}/${l.n} : ${Math.round(v)}€"></div>`;
+  }).join('');
+  return`<div class="palier-stack" title="Répartition du potentiel par palier">${segs}</div>`;
+}
+function goCountry(k){
+  TCOUNTRY=k||null;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('nav button:not(.expand-all-btn)').forEach(b=>b.classList.remove('active'));
+  const btn=document.querySelector('nav button[onclick*="tickets"]');
+  if(btn)btn.classList.add('active');
+  document.getElementById('tickets').classList.add('active');
+  renderTickets();
+}
+const CAT_DEFS=[
+  {key:'gagne',label:'Acquis',color:'#d4789a'},
+  {key:'vivant',label:'Potentiel',color:'#f0a8c0'},
+  {key:'proche',label:'Proche',color:'#9a7a88'},
+  {key:'encours',label:'En cours',color:'#4a4a4a'},
+  {key:'mort',label:'Morts',color:'#2b2b2b'}
+];
+let EXPAND_ALL=false;
+const UNIT_MISE=0.10;
+
+// ══════════════════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════════════════
+const SUPA_URL = 'https://lnuaeopszayqomnnjprc.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxudWFlb3BzemF5cW9tbm5qcHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzUzNjMsImV4cCI6MjA5NjkxMTM2M30.Ybd9X7lBnVBw3PbOydluhWuOdLGwb0h5vBqxN6VTiqQ';
+const SUPA_TABLE = 'player_status';
+
+// ─── Supabase client (vanilla, no deps) ───────────────────
+const supa = {
+  async fetchAll() {
+    try {
+      const r = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?select=player_key,status,updated_at,updated_by&limit=1000`, {
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': `Bearer ${SUPA_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!r.ok) {
+        const txt = await r.text();
+        console.error('Supabase fetchAll error:', r.status, txt);
+        return [];
+      }
+      return r.json();
+    } catch(e) {
+      console.error('Supabase fetchAll exception:', e);
+      return [];
+    }
+  },
+  async upsert(player_key, status, updated_by = 'manual') {
+    // Use PATCH on the specific row via player_key filter (avoids 409 conflict)
+    const r = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?player_key=eq.${encodeURIComponent(player_key)}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ status, updated_at: new Date().toISOString(), updated_by })
+    });
+    if (r.ok) return true;
+    // If row doesn't exist yet, insert it
+    if (r.status === 404 || r.status === 0) {
+      const r2 = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': `Bearer ${SUPA_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ player_key, status, updated_at: new Date().toISOString(), updated_by })
+      });
+      return r2.ok;
+    }
+    const txt = await r.text();
+    console.error('Supabase upsert error:', r.status, txt);
+    return false;
+  },
+  async upsertBatch(rows) {
+    // PATCH each row individually
+    const results = await Promise.all(rows.map(r => this.upsert(r.player_key, r.status, r.updated_by || 'auto')));
+    return results.every(Boolean);
+  },
+  subscribeChanges(callback) {
+    // Supabase Realtime via WebSocket
+    const wsUrl = SUPA_URL.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SUPA_KEY + '&vsn=1.0.0';
+    let ws, hb;
+    function connect() {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ topic: 'realtime:public:player_status', event: 'phx_join', payload: {}, ref: '1' }));
+        hb = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: '2' })), 25000);
+      };
+      ws.onmessage = e => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.event === 'INSERT' || msg.event === 'UPDATE') {
+            const rec = msg.payload?.record;
+            if (rec?.player_key && rec?.status) callback(rec.player_key, rec.status, rec.updated_by || 'auto');
+          }
+        } catch {}
+      };
+      ws.onclose = () => { clearInterval(hb); setTimeout(connect, 5000); };
+      ws.onerror = () => ws.close();
+    }
+    connect();
+    return () => { clearInterval(hb); ws && ws.close(); };
+  }
+};
+
+// ─── API-Football scorer auto-refresh ─────────────────────
+// Plan gratuit : 100 req/jour — on interroge uniquement les matchs terminés du jour
+const API_FOOTBALL_KEY = null; // À renseigner si tu crées un compte api-football.com
+
+async function refreshFromAPIFootball() {
+  if (!API_FOOTBALL_KEY) {
+    showToast('Clé API-Football non configurée', 'warn');
+    return false;
+  }
+  try {
+    showToast('Récupération des scores…', 'info');
+    // Récupère les matchs WC2026 du jour terminés
+    const today = new Date().toISOString().split('T')[0];
+    const r = await fetch(`https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${today}&status=FT`, {
+      headers: { 'x-apisports-key': API_FOOTBALL_KEY }
+    });
+    if (!r.ok) { showToast('Erreur API-Football', 'error'); return false; }
+    const data = await r.json();
+    const fixtures = data.response || [];
+    if (!fixtures.length) { showToast('Aucun match terminé aujourd\'hui', 'info'); return false; }
+
+    // Pour chaque match, récupère les stats joueurs
+    const updates = [];
+    for (const fix of fixtures) {
+      const fid = fix.fixture.id;
+      const homeTeam = fix.teams.home.name;
+      const awayTeam = fix.teams.away.name;
+      const sr = await fetch(`https://v3.football.api-sports.io/fixtures/players?fixture=${fid}`, {
+        headers: { 'x-apisports-key': API_FOOTBALL_KEY }
+      });
+      if (!sr.ok) continue;
+      const sd = await sr.json();
+      // Calcule le meilleur buteur et passeur par équipe
+      for (const teamData of (sd.response || [])) {
+        const teamName = teamData.team.name;
+        let topScorer = null, topScoreG = 0;
+        let topAssist = null, topAssistA = 0;
+        for (const p of (teamData.players || [])) {
+          const g = p.statistics?.[0]?.goals?.total || 0;
+          const a = p.statistics?.[0]?.goals?.assists || 0;
+          if (g > topScoreG) { topScoreG = g; topScorer = p.player.name; }
+          if (a > topAssistA) { topAssistA = a; topAssist = p.player.name; }
+        }
+        updates.push({ team: teamName, scorer: topScorer, scoreG: topScoreG, assist: topAssist, assistA: topAssistA });
+      }
+    }
+    // Mappe les noms API-Football → player_keys dans notre DB
+    // (mapping approximatif par nom normalisé)
+    const allRows = await supa.fetchAll();
+    const upserts = [];
+    for (const u of updates) {
+      if (u.scorer) {
+        const norm = u.scorer.toLowerCase().split(' ').pop(); // nom de famille
+        const match = allRows.find(r => r.player_key.split('|')[0].includes(norm) && r.player_key.endsWith('buteur'));
+        if (match) upserts.push({ player_key: match.player_key, status: 'tete', updated_by: 'auto' });
+      }
+    }
+    if (upserts.length) {
+      await supa.upsertBatch(upserts);
+      showToast(`${upserts.length} joueur(s) mis à jour`, 'success');
+    } else {
+      showToast('Aucune mise à jour trouvée', 'info');
+    }
+    return true;
+  } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+    return false;
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// SYNC STATE
+// ══════════════════════════════════════════════════════════
+let SUPA_LOADED = false;
+let PENDING_SAVES = {}; // player_key -> status (buffer offline)
+
+function init(){
+  const reKey=k=>{const parts=String(k).split('|');if(parts.length<3)return null;return pkey(parts[0],parts[1],parts[2]);};
+  const collapse=obj=>{const out={};for(const[k,v]of Object.entries(obj||{})){const nk=reKey(k);if(nk)out[nk]=mergeStatut(out[nk],v);}return out;};
+  const base=collapse(RAW.players);
+  const saved=(()=>{try{return JSON.parse(localStorage.getItem('wc26_v4')||'{}');}catch{return{};}})();
+  P={...base,...collapse(saved)};
+  render();
+  // Load from Supabase (overrides local)
+  loadFromSupabase();
+  // Subscribe to realtime changes
+  supa.subscribeChanges((player_key, status, by) => {
+    P[player_key] = status;
+    localStorage.setItem('wc26_v4', JSON.stringify(P));
+    render();
+    if(by === 'auto') showSyncToast('Mise à jour auto: ' + player_key.split('|')[0]);
+  });
+}
+
+async function loadFromSupabase() {
+  try {
+    console.log('Loading from Supabase...');
+    const rows = await supa.fetchAll();
+    console.log('Supabase rows:', rows ? rows.length : 'null');
+    if(!rows || !rows.length) {
+      console.warn('No rows returned from Supabase');
+      updateSyncIndicator(false);
+      return;
+    }
+    rows.forEach(r => { if(r.player_key && r.status) P[r.player_key] = r.status; });
+    localStorage.setItem('wc26_v4', JSON.stringify(P));
+    SUPA_LOADED = true;
+    render();
+    updateSyncIndicator(true);
+  } catch(e) {
+    console.error('loadFromSupabase error:', e);
+    updateSyncIndicator(false);
+  }
+}
+
+async function save(player_key, status) {
+  // Save to localStorage immediately
+  localStorage.setItem('wc26_v4', JSON.stringify(P));
+  // Push to Supabase
+  const ok = await supa.upsert(player_key, status, 'manual');
+  if(!ok) {
+    PENDING_SAVES[player_key] = status;
+    updateSyncIndicator(false);
+  } else {
+    delete PENDING_SAVES[player_key];
+    updateSyncIndicator(true);
+  }
+}
+
+function updateSyncIndicator(ok) {
+  const el = document.getElementById('syncIndicator');
+  if(!el) return;
+  el.textContent = ok ? '● sync' : '● offline';
+  el.style.color = ok ? '#7dd3b0' : '#888';
+}
+
+function showSyncToast(msg) {
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #2a2a2a;color:#7dd3b0;font-size:11px;padding:6px 14px;border-radius:4px;z-index:9999;pointer-events:none';
+  d.textContent = msg;
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 3000);
+}
+
+function showToast(msg, type) {
+  const colors = {success:'#7dd3b0', warn:'#f0a8c0', error:'#f87171', info:'#888'};
+  const d = document.createElement('div');
+  d.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #2a2a2a;color:${colors[type]||'#ccc'};font-size:11px;padding:6px 14px;border-radius:4px;z-index:9999;pointer-events:none`;
+  d.textContent = msg;
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 3000);
+}
+
+function pkey(j,p,t){return paysKeyNorm(j)+'|'+paysKeyNorm(canonPays(p))+'|'+(t||'').trim().toLowerCase();}
+function status(j,p,t){const k=pkey(j,p,t);if(P[k])return P[k];const n=paysKeyNorm(j),tp=(t||'').trim().toLowerCase();for(const[key,v]of Object.entries(P)){const parts=key.split('|');if(parts[0]===n&&parts[2]===tp)return v;}return'attente';}
+function setStatus(j,p,t,s){
+  const k=pkey(j,p,t);
+  P[k]=s;
+  const n=paysKeyNorm(j),tp=(t||'').trim().toLowerCase();
+  for(const key of Object.keys(P)){const parts=key.split('|');if(parts[0]===n&&parts[2]===tp)P[key]=s;}
+  save(k, s);
+  render();
+}
+function activeCount(t){return t.selections.filter(s=>['tete','gagnant'].includes(status(s.joueur,s.pays,s.type))).length;}
+function finalizedCount(t){return t.selections.filter(s=>status(s.joueur,s.pays,s.type)==='gagnant').length;}
+function isFinalized(st){return st==='gagnant';}
+function isDead(st){return st==='perdant';}
+function minK(sys){return parseInt(sys.split('/')[0]);}
+function isWin(t){return activeCount(t)>=minK(t.systeme);}
+function isGagne(t){return finalizedCount(t)>=minK(t.systeme);}
+function isClose(t){return activeCount(t)===minK(t.systeme)-1;}
+function uniquePlayers(){const m=new Map();for(const t of T)for(const s of t.selections){const k=pkey(s.joueur,s.pays,s.type);if(!m.has(k))m.set(k,{joueur:s.joueur.trim(),pays:s.pays.trim(),type:s.type,n:0});m.get(k).n++;}return[...m.values()];}
+
+// ══════════════════════════════════════════════════════════
+// GAINS
+// ══════════════════════════════════════════════════════════
+function comboGainPotentiel(sels){
+  // Gain = produit des cotes des joueurs GAGNANTS (tete ou gagnant) * mise
+  const actives=sels.filter(s=>['tete','gagnant'].includes(status(s.joueur,s.pays,s.type)));
+  if(actives.length!==sels.length)return null;// pas encore complet
+  let prod=1;
+  for(const s of sels){const c=getCoteForSel(s);if(!c)return null;prod*=c;}
+  return prod*UNIT_MISE;
+}
+
+function getCoteForSel(s){return s.cote||getCote(s.joueur,s.type);}
+function comboGainTotal(sels){
+  let prod=1;
+  for(const s of sels){
+    const c=getCoteForSel(s);
+    if(!c)return null;
+    prod*=c;
+  }
+  return prod*UNIT_MISE;
+}
+
+function comboStatus(sels){
+  const statuses=sels.map(s=>status(s.joueur,s.pays,s.type));
+  const nPerdant=statuses.filter(s=>s==='perdant').length;
+  const nFinal=statuses.filter(s=>s==='gagnant').length;
+  const nActive=statuses.filter(s=>['tete','gagnant'].includes(s)).length;
+  const nVivant=statuses.filter(s=>['tete','gagnant','attente','depasse'].includes(s)).length;
+  const n=sels.length;
+  // Mort : au moins 1 perdant définitif
+  if(nPerdant>0)return'dead';
+  // Acquis : tous finalisés (gagnant)
+  if(nFinal===n)return'finalized';
+  // Potentiel : tous actifs (tete/gagnant) mais pas tous finalisés
+  if(nActive===n)return'win';
+  // Proche : 1 seul manquant et tous les autres actifs
+  if(nActive===n-1&&nVivant===n)return'close';
+  // Vivant : au moins 1 actif, aucun perdant
+  if(nActive>0)return'live';
+  return'idle';
+}
+
+// Gains consolidés d'un ticket système
+function ticketGains(ticket){
+  const combos=getDeployedCombos(ticket);
+  let acquis=0,potentiel=0,mort=0;
+  const mise=combos.length*UNIT_MISE;
+  for(const{sels}of combos){
+    const cs=comboStatus(sels);
+    if(cs==='dead'){mort++;continue;}
+    const g=comboGainTotal(sels);
+    if(g===null)continue;
+    // acquis = finalisé (tous gagnant), potentiel = tout le reste actif
+    if(cs==='finalized')acquis+=g;
+    else potentiel+=g;
+  }
+  const allDead=mort===combos.length;
+  return{acquis,potentiel,mort,mise,total:acquis+potentiel,allDead,nbCombos:combos.length};
+}
+
+// Gains globaux portefeuille
+function portfolioGains(){
+  let totalMise=0,acquis=0,potentiel=0,mort=0;
+  for(const t of T){
+    const g=ticketGains(t);
+    totalMise+=g.mise;
+    acquis+=g.acquis;
+    potentiel+=g.potentiel;
+    mort+=g.mort;
+  }
+  return{totalMise,acquis,potentiel,mort,enCours:potentiel};
+}
+
+function fmt(v){if(v===null)return'—';if(v===0)return'0€';return Math.round(v)+'€';}
+
+// Parse le gain max attendu depuis le nom du ticket (ex: "142k"→142000, "70k Soso"→70000, "2k7"→2700)
+function parseMaxFromName(nom){
+  const part=nom.trim().split(' ')[0];
+  const m=part.match(/^([\d.]+)k(\d{1,2})?/i);
+  if(!m)return null;
+  const base=parseFloat(m[1]);
+  const suffix=m[2]?parseFloat('0.'+m[2].padEnd(2,'0')):0;
+  return Math.round((base+suffix)*1000);
+}
+function fmtC(v,c){return`<span style="color:${c}">${fmt(v)}</span>`;}
+
+// ══════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════
+function render(){
+  renderHeader();
+  const id=document.querySelector('.tab.active')?.id;
+  if(id==='dash')renderDash();
+  if(id==='joueurs')renderJoueurs();
+  if(id==='tickets')renderTickets();
+  if(id==='alertes')renderAlertes();
+}
+
+function toggleAll(){
+  EXPAND_ALL=!EXPAND_ALL;
+  T.forEach(t=>DEPLOY_STATE[t.id]=EXPAND_ALL);
+  document.querySelector('.expand-all-btn').textContent=EXPAND_ALL?'⊟ Tout réduire':'⊞ Tout déployer';
+  render();
+}
+
+function toggleDeploy(id,e){
+  e&&e.stopPropagation();
+  DEPLOY_STATE[id]=!DEPLOY_STATE[id];
+  render();
+}
+
+function renderHeader(){
+  const pl=uniquePlayers();
+  const counts={};
+  for(const s of STATUTS)counts[s]=pl.filter(p=>status(p.joueur,p.pays,p.type)===s).length;
+  const wins=T.filter(isWin).length,close=T.filter(isClose).length;
+  const{acquis,potentiel}=portfolioGains();
+  document.getElementById('hStats').innerHTML=
+    hs(T.length,'tickets')+hs(counts.tete+counts.gagnant,'actifs','var(--c-tete)')+
+    hs(counts.gagnant,'gagnants','var(--c-gagne)')+hs(wins,'tickets win','var(--c-gagne)')+
+    hs(close,'proches','var(--c-tete)')+
+    (acquis>0?hs(fmt(acquis),'acquis','var(--c-gagne-light)'):'')+
+    (potentiel>0?`<div class="h-stat"><span class="h-stat-n" style="color:var(--c-tete)">${fmt(potentiel)}</span><span class="h-stat-l">potentiel</span></div>`:'');
+}
+function hs(n,l,c='var(--rose)'){return`<div class="h-stat"><span class="h-stat-n" style="color:${c}">${n}</span><span class="h-stat-l">${l}</span></div>`;}
+
+function renderDash(){
+  const pl=uniquePlayers();
+  const counts={};
+  for(const s of STATUTS)counts[s]=pl.filter(p=>status(p.joueur,p.pays,p.type)===s).length;
+  const wins=T.filter(isWin).length,close=T.filter(isClose).length;
+  const totalU=T.reduce((a,t)=>a+countUnitaires(t.systeme),0);
+  const{totalMise,acquis,potentiel}=portfolioGains();
+
+  const kpis=`<div class="kpi-row">
+    <div class="kpi"><div class="kpi-n">${T.length}</div><div class="kpi-l">Tickets système</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--muted2)">${totalU}</div><div class="kpi-l">Unitaires déployés</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--rose)">${counts.tete}</div><div class="kpi-l">En tête</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--c-gagne-light)">${counts.gagnant}</div><div class="kpi-l">Gagnants</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--amber)">${counts.depasse}</div><div class="kpi-l">Dépassés</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--red)">${counts.perdant}</div><div class="kpi-l">Perdants</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--green)">${wins}</div><div class="kpi-l">Tickets win</div></div>
+    <div class="kpi"><div class="kpi-n" style="color:var(--rose)">${close}</div><div class="kpi-l">Proches seuil</div></div>
+  </div>`;
+
+  let aUnJoueur=0,nbAUn=0;const oneAway=[];
+  T.forEach(t=>{const pd=palierData(t);if(pd.next&&pd.next.manque===1&&!ticketGains(t).allDead){aUnJoueur+=pd.next.pot;nbAUn++;oneAway.push({t,pot:pd.next.pot,k:pd.next.k,n:pd.next.n});}});
+  oneAway.sort((a,b)=>b.pot-a.pot);
+  const oneMax=oneAway.length?oneAway[0].pot:1;
+  const oneRows=oneAway.slice(0,5).map(o=>
+    `<div class="mini-row" onclick="goToTicket('${o.t.id}')"><span class="mini-lbl">${o.t.nom}</span><div class="mini-track"><div class="mini-fill" style="width:${(o.pot/oneMax*100).toFixed(1)}%;background:#f0a8c0"></div></div><span class="mini-val" style="color:var(--c-tete)">${o.k}/${o.n} +${fmt(o.pot)}</span></div>`
+  ).join('');
+  const pCounts={};
+  subsetForPays().forEach(t=>{const seen={};t.selections.forEach(s=>{seen[s.pays]=1;});for(const p in seen)pCounts[p]=(pCounts[p]||0)+1;});
+  const pArr=Object.keys(pCounts).map(p=>({p,n:pCounts[p]})).sort((a,b)=>b.n-a.n||a.p.localeCompare(b.p)).slice(0,7);
+  const pMax=pArr.length?pArr[0].n:1;
+  const paysRows=pArr.map(o=>{
+    const k=paysKeyNorm(o.p).replace(/'/g,"\\'");
+    return`<div class="mini-row" onclick="goCountry('${k}')"><span class="mini-lbl" title="${o.p.replace(/"/g,'&quot;')}">${o.p}</span><div class="mini-track"><div class="mini-fill" style="width:${(o.n/pMax*100).toFixed(1)}%;background:var(--rose)"></div></div><span class="mini-val">${o.n} tickets</span></div>`;
+  }).join('');
+  function subsetForPays(){return DASH_SEL?T.filter(t=>tCat(t)===DASH_SEL):T;}
+  const gains=`<div class="label">Gains & mises</div>
+  <div class="gains-row">
+    <div class="gain-kpi"><div class="gain-n" style="color:var(--muted2)">${fmt(totalMise)}</div><div class="gain-l">Mise totale</div></div>
+    <div class="gain-kpi"><div class="gain-n" style="color:var(--c-gagne-light)">${fmt(acquis)}</div><div class="gain-l">Acquis (confirmés)</div></div>
+    <div class="gain-kpi"><div class="gain-n" style="color:var(--c-tete)">${fmt(potentiel)}</div><div class="gain-l">Potentiel (en cours)</div></div>
+    <div class="gain-kpi"><div class="gain-n" style="color:var(--c-tete)">+${fmt(aUnJoueur)}</div><div class="gain-l">À 1 joueur d'un palier (${nbAUn} tickets)</div></div>
+    <div class="gain-kpi"><div class="gain-n" style="color:var(--red)">${fmt(totalMise-acquis-potentiel>0?totalMise-acquis-potentiel:0)}</div><div class="gain-l">Perdu (morts)</div></div>
+  </div>`;
+
+  const activeP=pl.filter(p=>['tete','gagnant'].includes(status(p.joueur,p.pays,p.type)));
+  const pills=activeP.length?activeP.map(p=>{
+    const st=status(p.joueur,p.pays,p.type);
+    const nt=T.filter(t=>t.selections.some(s=>s.joueur.trim().toLowerCase()===p.joueur.toLowerCase())).length;
+    const c=getCote(p.joueur);
+    return`<div class="tete-pill ${st==='gagnant'?'gagnant-pill':''}" onclick="goToPlayer('${p.joueur}')" style="cursor:pointer;user-select:none">
+      <div class="tete-pill-name">${p.joueur}${c?` <span class="pill-cote">×${c}</span>`:''}</div>
+      <div class="tete-pill-sub">${p.pays} · ${p.type} · ${nt}T · <span style="color:${st==='gagnant'?'var(--green)':'var(--rose)'}">${LABELS[st]}</span></div>
+    </div>`;
+  }).join(''):'<div class="empty">Aucun joueur actif</div>';
+
+  const near=[...T.filter(isWin),...T.filter(t=>isClose(t)&&!isWin(t))].map(t=>{
+    const ac=activeCount(t),mk=minK(t.systeme),n=t.selections.length,win=isWin(t),gagne=isGagne(t);
+    const names=t.selections.filter(s=>['tete','gagnant'].includes(status(s.joueur,s.pays,s.type))).map(s=>s.joueur).join(', ');
+    const{acquis:ga,potentiel:gp}=ticketGains(t);
+    const pd=palierData(t);
+    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${pd.reached.acquis>0?'var(--c-gagne-light)':'var(--c-tete)'}">${pd.reached.acquis>0?fmt(pd.reached.acquis)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
+    const nextStr=nextPalierStr(pd,false);
+    const totalStr=`<span style="font-size:10px;color:var(--muted2)">· ${ga>0?fmt(ga)+' acquis + ':''}${fmt(gp)} pot. total</span>`;
+    return`<div class="alert ${win?'win':'close'}">
+      <strong>${t.nom}</strong> <span style="color:var(--muted)">${t.systeme}</span>
+      &nbsp;·&nbsp; ${ac}/${n} actifs
+      ${reachedStr?' &nbsp;·&nbsp; '+reachedStr:''}
+      ${nextStr?' &nbsp;·&nbsp; '+nextStr:''}
+      ${totalStr}
+      <br><span style="font-size:10px;color:var(--muted)">${names}</span>
+    </div>`;
+  }).join('')||'<div class="empty">Aucun ticket proche du seuil</div>';
+
+  // ── ANALYSE INTERACTIVE (donut cliquable ↔ barres €, façon Power BI) ──
+  const catCounts={};T.forEach(t=>{const c=tCat(t);catCounts[c]=(catCounts[c]||0)+1;});
+  const donutData=CAT_DEFS.map(d=>({key:d.key,label:d.label,color:d.color,value:catCounts[d.key]||0}));
+  const subset=DASH_SEL?T.filter(t=>tCat(t)===DASH_SEL):T;
+  let sM=0,sA=0,sP=0;subset.forEach(t=>{const g=ticketGains(t);sM+=g.mise;sA+=g.acquis;sP+=g.potentiel;});
+  const sNet=sA-sM;
+  const selDef=CAT_DEFS.find(d=>d.key===DASH_SEL);
+  const donut=donutSVG(donutData,DASH_SEL,'dashSelect',String(subset.length),DASH_SEL?selDef.label:'tickets');
+  const legend=donutData.map(d=>
+    `<div class="cleg ${DASH_SEL===d.key?'on':(DASH_SEL?'dim':'')}" onclick="dashSelect('${d.key}')"><span class="cleg-dot" style="background:${d.color}"></span>${d.label}<span class="cleg-n">${d.value}</span></div>`
+  ).join('');
+  const eurBars=barsHTML([
+    {label:'Misé',value:sM,color:'#555'},
+    {label:'Acquis',value:sA,color:'#d4789a'},
+    {label:'Potentiel',value:sP,color:'#f0a8c0'},
+    {label:'Net',value:sNet,color:sNet>=0?'#d4789a':'#8a4a4a',signed:true}
+  ]);
+  const charts=`<div class="label" style="display:flex;align-items:center;gap:10px">Analyse interactive${DASH_SEL?` <span class="chart-reset" onclick="dashSelect(null)">✕ ${selDef.label}</span>`:''}</div>
+  <div class="charts-wrap">
+    <div class="chart-card">
+      <div class="chart-title">Tickets par statut <span class="chart-hint">cliquer pour filtrer</span></div>
+      <div class="chart-flex">${donut}<div class="chart-legend">${legend}</div></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Montants € <span class="chart-hint">${DASH_SEL?selDef.label+' · '+subset.length+' ticket'+(subset.length>1?'s':''):'tous les tickets'}</span></div>
+      ${eurBars}
+      <div style="font-size:9px;color:var(--muted2);margin-top:8px">Net = acquis − misé sur la sélection · le clic sur le donut ou la légende filtre ce visuel et le récap</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">À 1 joueur d'un palier <span class="chart-hint">${nbAUn} tickets · +${fmt(aUnJoueur)} · clic = ouvrir</span></div>
+      <div class="mini-rows">${oneRows||'<div style="font-size:11px;color:var(--muted2);padding:6px 0">Aucun ticket à −1 joueur</div>'}${oneAway.length>5?`<div style="font-size:10px;color:var(--muted2)">+${oneAway.length-5} autres…</div>`:''}</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top pays <span class="chart-hint">${DASH_SEL?selDef.label:'tous'} · clic = filtre tickets</span></div>
+      <div class="mini-rows">${paysRows||'<div style="font-size:11px;color:var(--muted2);padding:6px 0">—</div>'}</div>
+    </div>
+  </div>`;
+
+  // Tableau récap tickets avec gains (filtré par la sélection du donut)
+  const recapT=DASH_SEL?subset:T;
+  const ticketRows=recapT.map(t=>{
+    const{acquis:ga,potentiel:gp,mise}=ticketGains(t);
+    const win=isWin(t),close=isClose(t),gagne=isGagne(t);
+    const gainCol=gagne?`<span style="color:var(--c-gagne-light);font-weight:600">${fmt(ga)} acquis</span>`:win?`<span style="color:var(--c-tete)">${fmt(gp)} pot.</span>`:close?`<span style="color:var(--muted2)">${fmt(gp)}</span>`:`<span style="color:var(--muted)">—</span>`;
+    const pdR=palierData(t);
+    const nextCell=pdR.next
+      ?`<span style="color:var(--c-tete)">${pdR.next.k}/${pdR.next.n}</span> <span style="color:var(--muted2)">−${pdR.next.manque}j</span> <span style="color:var(--c-tete)">+${fmt(pdR.next.pot)}</span>`
+      :(pdR.reached?'<span style="color:var(--c-gagne)">tous atteints</span>':'<span style="color:var(--c-mort)">—</span>');
+    return`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:4px 8px;color:var(--text);font-size:11px">${t.nom}</td>
+      <td style="padding:4px 8px;color:var(--rose);font-size:10px">${t.systeme}</td>
+      <td style="padding:4px 8px;font-size:10px">${activeCount(t)}/${t.selections.length}</td>
+      <td style="padding:4px 8px;color:var(--muted);font-size:10px">${fmt(mise)}</td>
+      <td style="padding:4px 8px;font-size:10px">${gainCol}</td>
+      <td style="padding:4px 8px;font-size:10px;white-space:nowrap">${nextCell}</td>
+      <td style="padding:4px 8px"><span style="font-size:9px;padding:1px 5px;border-radius:2px;background:${win?'var(--green-bg)':close?'var(--rose-bg)':'var(--s2)'};color:${win?'var(--green)':close?'var(--rose)':'var(--muted)'};border:1px solid ${win?'#1a5040':close?'var(--rose-mid)':'var(--border2)'}">${win?'Win':close?'Proche':'En cours'}</span></td>
+    </tr>`;
+  }).join('');
+
+  const tableau=`<div class="label" style="margin-top:20px">Récap tickets${DASH_SEL?` · <span style="color:${selDef.color}">${selDef.label} (${recapT.length})</span>`:''}</div>
+  <table style="width:100%;border-collapse:collapse;background:var(--s1);border:1px solid var(--border);border-radius:3px;overflow:hidden">
+    <thead><tr style="background:var(--s2)">
+      <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Ticket</th>
+      <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Système</th>
+      <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Actifs</th>
+      <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Mise</th>
+      <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Gain</th>
+      <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Prochain palier</th>
+      <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Statut</th>
+    </tr></thead>
+    <tbody>${ticketRows}</tbody>
+  </table>`;
+
+  document.getElementById('dash').innerHTML=kpis+gains+charts+
+    `<div class="label">Joueurs en tête et gagnants</div><div class="tete-strip">${pills}</div>`+
+    `<div class="label">Tickets gagnants et proches</div>${near}`+tableau;
+}
+
+function renderJoueurs(){
+  const search=(document.getElementById('psearch')||{value:''}).value.toLowerCase();
+  const sf=(document.getElementById('psf')||{value:''}).value;
+  const tf=(document.getElementById('ptf')||{value:''}).value;
+  let pl=uniquePlayers();
+  if(search)pl=pl.filter(p=>p.joueur.toLowerCase().includes(search)||p.pays.toLowerCase().includes(search));
+  if(sf)pl=pl.filter(p=>status(p.joueur,p.pays,p.type)===sf);
+  if(tf)pl=pl.filter(p=>p.type===tf);
+  const ord={tete:0,gagnant:1,depasse:2,attente:3,perdant:4};
+  pl.sort((a,b)=>{const d=ord[status(a.joueur,a.pays,a.type)]-ord[status(b.joueur,b.pays,b.type)];return d!==0?d:b.n-a.n;});
+
+  const _lc=['var(--c-gagne)','var(--c-tete)','var(--c-attente)','var(--c-depasse)','var(--c-mort)'];
+  const _lk=['gagnant','tete','attente','depasse','perdant'];
+  const _ll=['Gagnant','En tête','Attente','Dépassé','Perdant'];
+  const legend='<div class="legend">'+
+    _lk.map(function(s,i){
+      var act=sf===s;
+      var onclick='filterByStatus(\"'+(act?'':s)+'\")';
+      return'<div class="leg" onclick="'+onclick+'"  style="cursor:pointer;'+(act?'border-bottom:1px solid '+_lc[i]+';padding-bottom:2px':'')+'" title="Filtrer: '+_ll[i]+'">'+
+        '<div class="leg-dot" style="background:'+_lc[i]+';'+(act?'width:8px;height:8px':'')+'"></div>'+
+        '<span style="color:'+(act?_lc[i]:'var(--muted2)')+(act?';font-weight:600':'')+'">'+ _ll[i] +'</span>'+
+      '</div>';
+    }).join('')+
+    (sf?'<div class="leg" onclick="filterByStatus(\'\')" style="cursor:pointer" title="Réinitialiser"><span style="color:var(--muted);font-size:9px">✕</span></div>':'')+
+  '</div>';
+
+  const esc=s=>s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const maxN=pl.reduce((m,p)=>Math.max(m,p.n),1);
+  const cards=pl.length?pl.map(p=>{
+    const st=status(p.joueur,p.pays,p.type);
+    const c=getCote(p.joueur);
+    return`<div class="pcard ${st}">
+      <div class="pcard-top">
+        <div class="pcard-name">${p.joueur}</div>
+        <div class="pcard-count ${p.n>=4?'hi':''}">${p.n}×</div>
+      </div>
+      <div class="pcard-meta">
+        <span>${p.pays}</span>
+        <span class="tbadge ${p.type}">${p.type}</span>
+        ${c?`<span class="cote-badge">×${c}</span>`:''}
+      </div>
+      <div class="p-mini-track" title="${p.n} tickets"><div class="mini-fill" style="width:${(p.n/maxN*100).toFixed(0)}%;background:${st==='tete'||st==='gagnant'?'var(--c-gagne)':st==='perdant'?'var(--c-mort)':'var(--rose-dim)'}"></div></div>
+      <div class="pcard-btns">
+        ${STATUTS.map(s=>`<button class="sbtn ${st===s?'on-'+s:''}" onclick="setStatus('${esc(p.joueur)}','${esc(p.pays)}','${p.type}','${s}')">${LABELS[s]}</button>`).join('')}
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">Aucun joueur</div>';
+
+  const _joueurEl=document.getElementById('joueurs');
+  const _pEl=document.getElementById('psearch');
+  const _hadFocus=document.activeElement===_pEl;
+  const _cursorPos=_pEl?_pEl.selectionStart:0;
+  _joueurEl.innerHTML=`
+    <div class="filters">
+      <input id="psearch" placeholder="Joueur, pays…" oninput="renderJoueurs()" value="${search}">
+      <select id="psf" onchange="renderJoueurs()">
+        <option value="">Tous les statuts</option>
+        ${STATUTS.map(s=>`<option value="${s}" ${sf===s?'selected':''}>${LABELS[s]}</option>`).join('')}
+      </select>
+      <select id="ptf" onchange="renderJoueurs()">
+        <option value="">Buteur + Passeur</option>
+        <option value="buteur" ${tf==='buteur'?'selected':''}>Buteur</option>
+        <option value="passeur" ${tf==='passeur'?'selected':''}>Passeur</option>
+      </select>
+    </div>
+    ${legend}
+    <div class="pgrid">${cards}</div>`;
+  if(_hadFocus){
+    const _newInput=document.getElementById('psearch');
+    if(_newInput){_newInput.focus();_newInput.setSelectionRange(_cursorPos,_cursorPos);}
+  }
+}
+
+function buildProbaStrip(ticket){
+  const[kMin,n]=ticket.systeme.split('/').map(Number);
+  const ac=activeCount(ticket);
+  const levels=[];
+  for(let k=kMin;k<=n;k++)levels.push(k);
+  if(!levels.length)return'';
+  const maxH=20;
+  // Distribution visuelle approximative basée sur actifs/total
+  const p=ac/n;
+  const bars=levels.map(k=>{
+    // Binomiale approx
+    const h=Math.max(2,Math.round(maxH*Math.exp(-2*Math.pow(k/n-p,2))));
+    const isMin=k===kMin;
+    const col=k===n?'var(--amber)':isMin?'#2a3a5a':'var(--rose-dim)';
+    const pct=Math.round(combN(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k)*100);
+    return`<div class="pb-col" title="${k}/${n} : ~${pct}%">
+      <div class="pb-bar" style="height:${h}px;background:${col}"></div>
+      <div class="pb-lbl" style="color:${isMin?'var(--rose)':'var(--muted)'}">${k}/${n}</div>
+    </div>`;
+  }).join('');
+  return`<div class="proba-strip">
+    <div class="proba-label">Distribution probabilités · seuil <span style="color:var(--rose)">${kMin}/${n}</span> · ${ac} actifs</div>
+    <div class="proba-bars">${bars}</div>
+  </div>`;
+}
+
+function buildDeployedSection(ticket){
+  const isOpen=DEPLOY_STATE[ticket.id]||false;
+  const nbU=countUnitaires(ticket.systeme);
+  const mise=nbU*UNIT_MISE;
+  const{acquis:ga,potentiel:gp}=ticketGains(ticket);
+  const gainStr=ga>0?`${fmt(ga)} acquis`:gp>0?`${fmt(gp)} potentiel`:'';
+
+  const toggleHtml=`<div class="deploy-toggle" onclick="toggleDeploy('${ticket.id}',event)">
+    <span class="deploy-icon">${isOpen?'▼':'▶'}</span>
+    <span class="deploy-label">${isOpen?'Masquer':'Déployer'} <span>${nbU} unitaires · ${fmt(mise)}</span></span>
+    ${gainStr?`<span class="deploy-gain">${gainStr}</span>`:''}
+  </div>`;
+
+  if(!isOpen)return toggleHtml;
+
+  const combos=getDeployedCombos(ticket);
+  const[kMin]=ticket.systeme.split('/').map(Number);
+  const _ac=activeCount(ticket);
+  const _aliveN=ticket.selections.filter(s=>status(s.joueur,s.pays,s.type)!=='perdant').length;
+
+  // Grouper par taille
+  const groups={};
+  combos.forEach(({k,sels})=>{if(!groups[k])groups[k]=[];groups[k].push(sels);});
+
+  let html=toggleHtml+'<div class="deployed-section"><div style="display:flex;gap:12px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:9px;flex-wrap:wrap">' +
+    '<span style="color:var(--c-gagne-light)">● Acquis</span>' +
+    '<span style="color:var(--c-tete)">● Potentiel</span>' +
+    '<span style="color:var(--muted2)">● Proche</span>' +
+    '<span style="color:var(--muted)">● Vivant</span>' +
+    '<span style="color:var(--c-mort)">● Mort</span>' +
+    '</div>';
+  for(const k of Object.keys(groups).sort((a,b)=>b-a)){
+    const g=groups[k];
+    const isMinLevel=parseInt(k)===kMin;
+    
+    // Calcul gains du niveau
+    let levelAcquis=0, levelPotentiel=0, levelMort=0;
+    const chips=g.map(sels=>{
+      const cs=comboStatus(sels);
+      const gt=comboGainTotal(sels);
+      if(cs==='dead'){levelMort++;return null;}
+      if(gt){if(cs==='win')levelAcquis+=gt;else levelPotentiel+=gt;}
+      
+      // Chip : noms courts + gain
+      const statusColors={'gagnant':'var(--c-gagne)','tete':'var(--c-tete)','attente':'var(--muted2)','depasse':'var(--c-depasse)','perdant':'var(--c-mort)'};
+      const names=sels.map(s=>{
+        const st=status(s.joueur,s.pays,s.type);
+        const col=statusColors[st]||'var(--muted2)';
+        const deco=st==='perdant'?';text-decoration:line-through':'';
+        const bold=st==='gagnant'?';font-weight:700':'';
+        const check=st==='gagnant'?'<span style="color:var(--c-gagne);font-size:9px;margin-right:2px;font-weight:700">✓</span>':'';
+        return`${check}<span style="color:${col}${deco}${bold}">${s.joueur.split(' ')[0]}</span>`;
+      }).join('<span style="color:var(--muted)"> · </span>');
+      const gainChip=gt?fmt(gt):'—';
+      let cls='';
+      if(cs==='win')cls='u-win';
+      else if(cs==='close')cls='u-close';
+      else if(cs==='live')cls='u-live';
+      
+      const fullNames=sels.map(s=>`${s.joueur} (${s.pays.trim()})`).join(' · ');
+      return`<div class="ut-row ${cls}">
+        <span class="ut-names">${names}</span>
+        <span class="ut-gain">${gainChip}</span>
+      </div>`;
+    }).filter(Boolean).join('');
+
+    const allLevelDead=levelMort===g.length;
+    const levelGainStr=allLevelDead
+      ?`<span style="color:var(--red);text-decoration:line-through">niveau mort</span>`
+      :levelAcquis>0?`<span style="color:var(--c-gagne)">${fmt(levelAcquis)} acquis</span>`
+      :levelPotentiel>0?`<span style="color:var(--muted2)">${fmt(levelPotentiel)} potentiel</span>`:'';
+    const mortStr=levelMort>0&&!allLevelDead?`<span style="color:var(--red);font-size:9px">${levelMort} mort${levelMort>1?'s':''}</span>`:'';
+
+    html+=`<div class="deploy-level">
+      <div class="deploy-level-title">
+        <span>${k} sél.${isMinLevel?' <span style="color:var(--rose);font-size:8px">seuil min</span>':''} ${_ac>=parseInt(k)?'<span style="color:var(--c-gagne);font-size:8px">✓ palier atteint</span>':_aliveN<parseInt(k)?'<span style="color:var(--c-mort);font-size:8px">palier mort</span>':'<span style="color:var(--c-tete);font-size:8px">manque '+(parseInt(k)-_ac)+'</span>'}</span>
+        <span style="display:flex;gap:8px;align-items:center">${levelGainStr}${mortStr}</span>
+      </div>
+      <div class="ut-list">${chips||'<span style="font-size:9px;color:var(--muted)">Aucun ticket valide</span>'}</div>
+    </div>`;
+  }
+  html+='</div>';
+  return html;
+}
+
+function renderTickets(){
+  const search=(document.getElementById('tsearch')||{value:''}).value.toLowerCase();
+  const sort=(document.getElementById('tsort')||{value:'tete'}).value;
+  let tickets=[...T];
+  if(TCOUNTRY)tickets=tickets.filter(t=>t.selections.some(s=>paysKeyNorm(s.pays)===TCOUNTRY));
+  if(search)tickets=tickets.filter(t=>t.nom.toLowerCase().includes(search)||t.selections.some(s=>s.joueur.toLowerCase().includes(search)));
+  if(sort==='tete')tickets.sort((a,b)=>activeCount(b)-activeCount(a));
+  else if(sort==='nom')tickets.sort((a,b)=>a.nom.localeCompare(b.nom));
+  else tickets.sort((a,b)=>a.systeme.localeCompare(b.systeme));
+
+  const cards=tickets.length?tickets.map(t=>{
+    const ac=activeCount(t),mk=minK(t.systeme),n=t.selections.length;
+    const win=isWin(t),close=isClose(t);
+    const pct=Math.min(100,Math.round(ac/mk*100));
+    const barC=win?'var(--green)':close?'var(--rose)':'#2a3a5a';
+    const fracC=win?'var(--green)':close?'var(--rose)':'var(--muted)';
+    const gagne=isGagne(t);
+    const badge=gagne
+      ?'<span class="tcard-badge win">Acquis</span>'
+      :win?'<span class="tcard-badge" style="background:var(--c-tete-bg);color:var(--c-tete);border-color:var(--c-tete-border)">Potentiel</span>'
+      :close?'<span class="tcard-badge close">Proche</span>'
+      :'<span class="tcard-badge idle">En cours</span>';
+    const nbU=countUnitaires(t.systeme);
+    const{acquis:ga,potentiel:gp,mise,allDead,mort:nbMort,nbCombos}=ticketGains(t);
+    const pd=palierData(t);
+    const gainHead=allDead
+      ?`<span class="tcard-gain-head" style="color:var(--c-mort);text-decoration:line-through">mort</span>`
+      :`<span style="font-size:10px;color:${ga>0?'var(--c-gagne-light)':'var(--muted2)'};margin-left:6px;white-space:nowrap">${ga>0?fmt(ga)+' acquis · ':''}${fmt(gp)} pot. restant</span>`;
+    const maxNomHtml=(!allDead&&pd.next)?`<span class="next-palier-mini" style="margin-left:6px">${nextPalierStr(pd,true)}</span>`:'';
+
+    const esc2=s=>s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const sels=t.selections.map(s=>{
+      const st=status(s.joueur,s.pays,s.type);
+      const c=getCoteForSel(s);
+      const mini=STATUTS.map(sv=>`<button class="mini-sbtn ${st===sv?'on-'+sv:''}" onclick="setStatus('${esc2(s.joueur)}','${esc2(s.pays)}','${s.type}','${sv}')" title="${LABELS[sv]}">${sv==='attente'?'·':sv==='tete'?'↑':sv==='gagnant'?'✓':sv==='depasse'?'↓':'✕'}</button>`).join('');
+      return`<div class="sel ${st}">
+        <div class="sel-dot ${st}"></div>
+        <span class="sel-name">${s.joueur}</span>
+        <span class="sel-pays">${s.pays.trim()}</span>
+        <span class="sel-t">${s.type==='buteur'?'B':'P'}</span>
+        ${c?`<span class="sel-cote">×${c}</span>`:''}
+        <span class="sel-actions">${mini}</span>
+      </div>`;
+    }).join('');
+
+    const topCls=allDead?'is-dead':win?'has-win':ac>0?'has-tete':'';
+    return`<div class="tcard ${topCls}">
+      <div class="tcard-head" onclick="toggleDeploy('${t.id}',event)">
+        <span class="tcard-nom">${t.nom}</span>
+        <span class="tcard-sys">${t.systeme}</span>
+        <div class="tcard-prog">
+          <div class="pbar-wrap"><div class="pbar" style="width:${pct}%;background:${barC}"></div></div>
+          <span class="tcard-frac" style="color:${fracC}">${ac}/${n}</span>
+        </div>
+        ${gainHead}
+        ${maxNomHtml}
+        <span class="tcard-expand-icon">${DEPLOY_STATE[t.id]?'▼':'▶'}</span>
+      </div>
+      <div class="tcard-body">${sels}</div>
+      ${allDead?'':palierChips(pd)}
+      ${buildProbaStrip(t)}
+      <div class="tcard-foot">
+        <span class="tcard-info">${ac} actifs · seuil ${mk}${nbMort>0?` · <span style="color:var(--red)">${nbMort} mort${nbMort>1?'s':''}</span>`:''}</span>
+        ${badge}
+        <span class="tcard-unitaires">${nbU} unit.</span>
+        <span class="tcard-mise">${fmt(mise)}</span>
+      </div>
+      ${buildDeployedSection(t)}
+    </div>`;
+  }).join(''):'<div class="empty">Aucun ticket</div>';
+
+  const _ticketsEl=document.getElementById('tickets');
+  const _tEl=document.getElementById('tsearch');
+  const _tHadFocus=document.activeElement===_tEl;
+  const _tCursorPos=_tEl?_tEl.selectionStart:0;
+  // ── Panneau drapeaux : 1 clic = uniquement les tickets contenant un joueur du pays ──
+  const fCounts={};
+  T.forEach(t=>{const seen={};t.selections.forEach(s=>{seen[s.pays]=1;});for(const p in seen)fCounts[p]=(fCounts[p]||0)+1;});
+  const fArr=Object.keys(fCounts).map(p=>({p,n:fCounts[p]})).sort((a,b)=>b.n-a.n||a.p.localeCompare(b.p));
+  const flags=`<div class="flag-row" style="flex-wrap:wrap;padding:2px 0 10px">${fArr.map(o=>{
+    const k=paysKeyNorm(o.p),act=TCOUNTRY===k;
+    return`<div class="flag-chip ${act?'active':''}" onclick="setCountry('${k.replace(/'/g,"\\'")}')" title="${o.p.replace(/"/g,'&quot;')} · ${o.n} ticket${o.n>1?'s':''}">${flagHTML(o.p,'fimg')}<span class="flag-n">${o.n}</span><div class="flag-bar"></div></div>`;
+  }).join('')}${TCOUNTRY?`<div class="flag-chip reset" onclick="setCountry(null)" title="Réinitialiser">✕</div>`:''}</div>`;
+
+  _ticketsEl.innerHTML=`
+    ${flags}
+    <div class="filters">
+      <input id="tsearch" placeholder="Ticket ou joueur…" oninput="renderTickets()" value="${search}">
+      <select id="tsort" onchange="renderTickets()">
+        <option value="tete" ${sort==='tete'?'selected':''}>Trier par joueurs actifs</option>
+        <option value="nom"  ${sort==='nom'?'selected':''}>Trier par nom</option>
+        <option value="sys"  ${sort==='sys'?'selected':''}>Trier par système</option>
+      </select>
+    </div>
+    <div class="tgrid">${cards}</div>`;
+  if(_tHadFocus){
+    const _newTInput=document.getElementById('tsearch');
+    if(_newTInput){_newTInput.focus();_newTInput.setSelectionRange(_tCursorPos,_tCursorPos);}
+  }
+}
+
+function renderAlertes(){
+  const wins=T.filter(isWin);
+  const close=T.filter(t=>isClose(t)&&!isWin(t));
+  const tRows=[...wins,...close].map(t=>{
+    const ac=activeCount(t),mk=minK(t.systeme),n=t.selections.length,win=isWin(t);
+    const actNames=t.selections.filter(s=>['tete','gagnant'].includes(status(s.joueur,s.pays,s.type))).map(s=>s.joueur).join(', ');
+    const waitNames=t.selections.filter(s=>status(s.joueur,s.pays,s.type)==='attente').map(s=>s.joueur).join(', ');
+    const{acquis:ga,potentiel:gp}=ticketGains(t);
+    const pd=palierData(t);
+    const reachedStr=pd.reached?`<span class="ok">palier ${pd.reached.k}/${n} atteint</span> · <span style="color:${pd.reached.acquis>0?'var(--c-gagne-light)':'var(--c-tete)'}">${pd.reached.acquis>0?fmt(pd.reached.acquis)+' acquis':'+'+fmt(pd.reached.pot)+' au palier'}</span>`:'';
+    const nextStr=nextPalierStr(pd,false);
+    return`<div class="alert ${win?'win':'close'}">
+      <strong>${t.nom}</strong> <span style="color:${'var(--muted)'}">${t.systeme}</span>
+      &nbsp;·&nbsp; ${ac}/${n} actifs
+      ${reachedStr?' &nbsp;·&nbsp; '+reachedStr:''}
+      ${nextStr?' &nbsp;·&nbsp; '+nextStr:''}
+      <span style="font-size:10px;color:var(--muted2)">· ${ga>0?fmt(ga)+' acquis + ':''}${fmt(gp)} pot. total</span>
+      <br><span style="font-size:10px;color:var(--muted)">Actifs : ${actNames||'—'} · En attente : ${waitNames||'—'}</span>
+    </div>`;
+  }).join('')||'<div class="empty">Aucune alerte active</div>';
+
+  const activePl=uniquePlayers().filter(p=>['tete','gagnant'].includes(status(p.joueur,p.pays,p.type)));
+  let isoRows='<div class="empty">Moins de 2 joueurs actifs</div>';
+  if(activePl.length>=2){
+    const pairs=[];
+    for(let i=0;i<activePl.length;i++)for(let j=i+1;j<activePl.length;j++){
+      const a=activePl[i],b=activePl[j];
+      const shared=T.filter(t=>t.selections.some(s=>s.joueur.trim().toLowerCase()===a.joueur.toLowerCase())&&t.selections.some(s=>s.joueur.trim().toLowerCase()===b.joueur.toLowerCase()));
+      pairs.push({a,b,shared});
+    }
+    pairs.sort((x,y)=>x.shared.length-y.shared.length);
+    isoRows=pairs.map(p=>{
+      const cls=p.shared.length===0?'warn':p.shared.length===1?'close':'';
+      return`<div class="alert ${cls}">
+        <strong>${p.a.joueur}</strong> + <strong>${p.b.joueur}</strong>
+        &nbsp;·&nbsp; ${p.shared.length} ticket${p.shared.length!==1?'s':''} commun${p.shared.length!==1?'s':''}
+        <br><span style="font-size:10px;color:var(--muted)">${p.shared.map(t=>t.nom).join(', ')||'aucun'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('alertes').innerHTML=`
+    <div class="label">Tickets gagnants et proches du seuil</div>${tRows}
+    <div class="label" style="margin-top:20px">Couverture entre joueurs actifs</div>${isoRows}`;
+}
+
+
+// ── NAVIGATION depuis le dashboard ──────────────────────
+function filterByStatus(s){
+  const el=document.getElementById('psf');
+  if(el){el.value=s;renderJoueurs();}
+}
+
+function goToPlayer(joueur){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('nav button:not(.expand-all-btn)').forEach(b=>b.classList.remove('active'));
+  const btn=document.querySelector('nav button[onclick*="joueurs"]');
+  if(btn)btn.classList.add('active');
+  document.getElementById('joueurs').classList.add('active');
+  // Pre-fill search and render
+  setTimeout(function(){
+    const el=document.getElementById('psearch');
+    if(el){el.value=joueur;renderJoueurs();}
+    setTimeout(function(){
+      const card=document.querySelector('.pcard');
+      if(card)card.scrollIntoView({behavior:'smooth',block:'start'});
+    },80);
+  },20);
+}
+
+function goToTicket(ticketId){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('nav button:not(.expand-all-btn)').forEach(b=>b.classList.remove('active'));
+  const btn=document.querySelector('nav button[onclick*="tickets"]');
+  if(btn)btn.classList.add('active');
+  document.getElementById('tickets').classList.add('active');
+  DEPLOY_STATE[ticketId]=true;
+  renderTickets();
+  setTimeout(function(){
+    const el=document.querySelector('[data-id="'+ticketId+'"]');
+    if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
+}
+
+function goTab(id,btn){
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('nav button:not(.expand-all-btn)').forEach(el=>el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
