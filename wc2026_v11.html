@@ -768,7 +768,7 @@ function buildSheetCombos(t, filterK) {
         return `<span style="color:${col};${bold}${deco}">${check}${s.joueur.split(' ')[0]}</span>`;
       }).join('<span style="color:var(--muted)"> · </span>');
       const gainChip = gt ? (cs==='finalized'?`<span style="color:var(--green);font-weight:700">${fmt(gt)}</span>`:fmt(gt)) : '—';
-      const rowCls = cs==='finalized'?'u-finalized':cs===='live'?'u-live':'';
+      const rowCls = cs==='finalized'?'u-finalized':cs==='live'?'u-live':'';
       return `<div class="ut-row ${rowCls}"><span class="ut-names">${names}</span><span class="ut-gain">${gainChip}</span></div>`;
     }).filter(Boolean).join('');
     const allDead = levelMort===g.length;
