@@ -1043,15 +1043,17 @@ function renderDashboard(){
     var min=sys.min,total=sys.total;
     // Compter statuts
     var segs=ticket.selections.map(function(s){return getPSt(s.joueur,s.pays,s.type);});
+    var nGagnant=segs.filter(function(x){return x==='gagnant';}).length;
     var nTete=segs.filter(function(x){return x==='tete';}).length;
-    }).length;
     var nDep=segs.filter(function(x){return x==='depasse';}).length;
-    var nWon=nTete+nEq;
-    // Construire segments : gagnants d'abord (gagnant puis tete), puis attente, puis depasse/perdant
+    var nPerd=segs.filter(function(x){return x==='perdant';}).length;
+    var nWon=nGagnant+nTete;
+    // Segments : gagnant (vert), tete (rose), attente (gris clair), depasse/perdant (gris fonce)
     var segColors=[];
+    for(var i=0;i<nGagnant;i++)segColors.push('gagnant');
     for(var i=0;i<nTete;i++)segColors.push('tete');
-    
     for(var i=0;i<nDep;i++)segColors.push('depasse');
+    for(var i=0;i<nPerd;i++)segColors.push('perdant');
     while(segColors.length<total)segColors.push('');
     // Jauge HTML
     var thresholdPct=((min-1)/total*100)+(0.5/total*100); // position entre seg min-1 et min
