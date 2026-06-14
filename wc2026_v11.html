@@ -197,13 +197,13 @@ main{padding:20px 24px}
 .ut-row.u-finalized{background:rgba(110,231,183,.05);border-left:2px solid var(--green)}
 .ut-row.u-finalized .ut-names{color:var(--green);font-weight:600}
 .ut-row.u-finalized .ut-gain{color:var(--green);font-weight:700}
-.ut-row.u-win{}
-.ut-row.u-win .ut-names{color:var(--rose);font-weight:500}
-.ut-row.u-win .ut-gain{color:var(--rose);font-weight:600}
+.ut-row.u-live{}
+.ut-row.u-live .ut-names{color:var(--rose);font-weight:500}
+.ut-row.u-live .ut-gain{color:var(--rose);font-weight:500}
 /* PROCHE — rose */
-.ut-row.u-close{}
-.ut-row.u-close .ut-names{color:var(--rose)}
-.ut-row.u-close .ut-gain{color:var(--rose);font-weight:600}
+
+
+
 /* VIVANT — gris clair, gain en gris moyen */
 .ut-row.u-live{}
 .ut-row.u-live .ut-names{color:var(--muted2)}
@@ -514,7 +514,7 @@ function flagHTML(pays,cls){
   const code=pays3(pays);
   return'<span class="cbadge">' + code + '</span>';
 }
-var ST_PRIORITY={gagnant:6,perdant:5,tete:4,exaequo:4,depasse:2,attente:1};
+var ST_PRIORITY={gagnant:5,perdant:4,tete:3,depasse:2,attente:1};
 function mergeStatut(a,b){if(!a)return b;if(!b)return a;return (ST_PRIORITY[b]||0)>(ST_PRIORITY[a]||0)?b:a;}
 // ── SVG donut + barres (sans dépendance) ──
 function _arcPath(cx,cy,r,ir,a0,a1){
@@ -572,8 +572,8 @@ function getDeployedCombos(ticket){const[kMin,n]=ticket.systeme.split('/').map(N
 // ══════════════════════════════════════════════════════════
 let P={};
 const T=RAW.tickets;
-const STATUTS=['attente','tete','gagnant','depasse','perdant'];
-const LABELS={attente:'Attente',tete:'En tête',gagnant:'Gagnant',depasse:'Dépassé',perdant:'Perdant'};
+const STATUTS=['attente','tete','depasse','perdant','gagnant'];
+const LABELS={attente:'Attente',tete:'En tete',depasse:'Depasse',perdant:'Perdant',gagnant:'Gagnant'};
 let DEPLOY_STATE={};// id -> true/false
 let DASH_SEL=null;   // statut sélectionné dans le donut (cross-filter Power BI)
 let TCOUNTRY=null;   // pays sélectionné dans le filtre drapeaux
@@ -586,7 +586,7 @@ function tCat(t){const g=ticketGains(t);if(g.allDead)return'mort';if(isGagne(t))
 function palierData(t){
   const[kMin,n]=t.systeme.split('/').map(Number);
   const ac=activeCount(t);
-  const aliveN=t.selections.filter(s=>status(s.joueur,s.pays,s.type)!=='perdant').length;
+  const aliveN=t.selections.filter(s=>{const st=status(s.joueur,s.pays,s.type);return st!=='perdant'&&st!=='depasse';}).length;
   const levels=[];
   for(let k=kMin;k<=n;k++){
     let pot=0,acquis=0,morts=0,nb=0;
@@ -685,11 +685,11 @@ function openTicketOverlay(ticketId) {
   else { badge.textContent = 'En cours'; badge.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border2);background:var(--s2);color:var(--muted)'; }
 
   const esc = v => (v||'').replace(/\\/g,'\\\\').replace(/'/g, "\\'");
-  const SLABELS = {attente:'ATT', tete:'TÊTE', gagnant:'GAG', depasse:'DEP', perdant:'PERD'};
+  const SLABELS = {attente:'ATT', tete:'TETE', gagnant:'GAG', depasse:'DEP', perdant:'PERD'};
   const sels = t.selections.map(s => {
     const st = status(s.joueur, s.pays, s.type);
     const dotColor = st==='tete'?'var(--rose)':st==='gagnant'?'var(--green)':st==='depasse'?'var(--muted)':st==='perdant'?'var(--red)':'#333';
-    const btns = ['tete','gagnant','depasse','perdant','attente'].map(sv =>
+    const btns = ['tete','depasse','perdant','attente','gagnant'].map(sv =>
       `<button onclick="setStatus('${esc(s.joueur)}','${esc(s.pays)}','${s.type}','${sv}');refreshOverlay('${ticketId}')"
         style="font-size:8px;padding:2px 5px;border-radius:2px;border:1px solid ${st===sv?'var(--rose-mid)':'var(--border2)'};background:${st===sv?'var(--rose-bg)':'var(--s2)'};color:${st===sv?(sv==='gagnant'?'var(--green)':'var(--rose)'):'var(--muted)'};cursor:pointer;white-space:nowrap">
         ${SLABELS[sv]}</button>`
@@ -768,7 +768,7 @@ function buildSheetCombos(t, filterK) {
         return `<span style="color:${col};${bold}${deco}">${check}${s.joueur.split(' ')[0]}</span>`;
       }).join('<span style="color:var(--muted)"> · </span>');
       const gainChip = gt ? (cs==='finalized'?`<span style="color:var(--green);font-weight:700">${fmt(gt)}</span>`:fmt(gt)) : '—';
-      const rowCls = cs==='finalized'?'u-finalized':cs==='win'?'u-win':cs==='close'?'u-close':cs==='live'?'u-live':'';
+      const rowCls = cs==='finalized'?'u-finalized':cs===='live'?'u-live':'';
       return `<div class="ut-row ${rowCls}"><span class="ut-names">${names}</span><span class="ut-gain">${gainChip}</span></div>`;
     }).filter(Boolean).join('');
     const allDead = levelMort===g.length;
@@ -960,22 +960,15 @@ function comboGainTotal(sels){
 
 function comboStatus(sels){
   const statuses=sels.map(s=>status(s.joueur,s.pays,s.type));
-  const nPerdant=statuses.filter(s=>s==='perdant').length;
-  const nFinal=statuses.filter(s=>s==='gagnant').length;
-  const nActive=statuses.filter(s=>['tete','gagnant'].includes(s)).length;
-  const nVivant=statuses.filter(s=>['tete','gagnant','attente','depasse'].includes(s)).length;
   const n=sels.length;
-  // Mort : au moins 1 perdant définitif
-  if(nPerdant>0)return'dead';
-  // Acquis : tous finalisés (gagnant)
-  if(nFinal===n)return'finalized';
-  // Potentiel : tous actifs (tete/gagnant) mais pas tous finalisés
-  if(nActive===n)return'win';
-  // Proche : 1 seul manquant et tous les autres actifs
-  if(nActive===n-1&&nVivant===n)return'close';
-  // Vivant : au moins 1 actif, aucun perdant
-  if(nActive>0)return'live';
-  return'idle';
+  // Perdu : au moins 1 mort (perdant ou depasse)
+  const nDead=statuses.filter(s=>s==='perdant'||s==='depasse').length;
+  if(nDead>0)return'dead';
+  // Gagnant : tous confirmes (equipe eliminee, joueur en tete)
+  const nGagnant=statuses.filter(s=>s==='gagnant').length;
+  if(nGagnant===n)return'finalized';
+  // Vivant : aucun mort, au moins 1 actif
+  return'live';
 }
 
 // Gains consolidés d'un ticket système
@@ -1371,9 +1364,7 @@ function buildDeployedSection(ticket){
       }).join('<span style="color:var(--muted)"> · </span>');
       const gainChip=gt?fmt(gt):'—';
       let cls='';
-      if(cs==='win')cls='u-win';
-      else if(cs==='close')cls='u-close';
-      else if(cs==='live')cls='u-live';
+      if(cs==='live')cls='u-live';
       
       const fullNames=sels.map(s=>`${s.joueur} (${s.pays.trim()})`).join(' · ');
       return`<div class="ut-row ${cls}">
