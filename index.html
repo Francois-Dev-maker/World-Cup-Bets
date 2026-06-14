@@ -278,9 +278,11 @@ input:focus,select:focus{border-color:var(--rose);}
 /* GAUGE */
 .gauge-wrap{display:flex;align-items:center;gap:3px;margin:8px 0 4px;position:relative;}
 .gauge-seg{flex:1;height:10px;border-radius:3px;background:var(--border2);transition:background .3s;}
-.gauge-seg.tete{background:var(--blue);}
-
-.gauge-seg.depasse{background:var(--wine);}
+.gauge-seg.gagnant{background:var(--c-gagne-light);}
+.gauge-seg.tete{background:var(--c-tete);}
+.gauge-seg.attente{background:rgba(255,255,255,0.12);}
+.gauge-seg.depasse{background:#444;}
+.gauge-seg.perdant{background:#333;}
 .gauge-threshold{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--text);border-radius:2px;opacity:0.8;}
 .gauge-threshold::after{content:'▼';position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--text);}
 .dash-ticket-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;overflow:hidden;}
@@ -618,7 +620,7 @@ window.onerror=function(msg,src,line,col){
 
 var SYSTEMS={'1/2':{min:1,total:2},'2/2':{min:2,total:2},'1/3':{min:1,total:3},'2/3':{min:2,total:3},'3/3':{min:3,total:3},'1/4':{min:1,total:4},'2/4':{min:2,total:4},'3/4':{min:3,total:4},'4/4':{min:4,total:4},'2/5':{min:2,total:5},'3/5':{min:3,total:5},'4/5':{min:4,total:5},'5/5':{min:5,total:5},'3/6':{min:3,total:6},'4/6':{min:4,total:6},'3/7':{min:3,total:7},'4/7':{min:4,total:7},'5/7':{min:5,total:7},'5/8':{min:5,total:8},'6/8':{min:6,total:8}};
 var ST_LABELS={attente:'Attente',tete:'En tete',gagnant:'Gagnant',depasse:'Depasse',perdant:'Perdant'};
-var STATUT_BTNS=[{k:'attente',label:'Attente'},{k:'tete',label:'En tete'},{k:'gagnant',label:'Gagnant'},{k:'depasse',label:'Depasse'},{k:'perdant',label:'Perdant'}];
+var STATUT_BTNS=[{k:'attente',label:'Attente'},{k:'tete',label:'En tete'},{k:'depasse',label:'Depasse'},{k:'perdant',label:'Perdu'},{k:'gagnant',label:'Gagnant'}];
 
 // ==========================================================
 // CANONICALISATION PAYS / JOUEURS + DRAPEAUX + GRAPHIQUES
@@ -712,7 +714,7 @@ function barsHTML(items){
 
 var COTES={"tahith chong":5,"jean duverne":50,"milos degenek":25,"yoel barcenas":20,"embolo":3.25,"alvarez":4.5,"akturkoglu":6,"gakpo":3.5,"semenyo":3.5,"saka":4,"nico williams":10,"musiala":5,"pavel sulc":9,"che adams":5.5,"raphina":4,"florian wirtz":6,"amad diallo":5.5,"elanga":12,"bakambu":3.75,"inaki williams":11,"leao":12,"mane":4,"neymar":10,"david":2.25,"vini":3.5,"leroy sane":10,"memphis depay":6,"edin dzeko":3.25,"ayase ueda":4,"darwin nunez":3,"balogun":4,"perisic":7,"gordon":20,"santiago gimenez":4.5,"de arrascaeta":3.25,"saibari":8,"abdul fatawu":11,"oluwaseyi":12,"lukaku":2.5,"dani olmo":10,"ismaila sarr":9,"kramaric":4,"simon banza":13,"woltemade":8,"dan ndoye":7,"ricardo pepi":7,"summerville":15,"kastaneer":12,"brahim diaz":3.5,"shomurodov":3.5,"ismael diaz":9,"ali olwan":4,"kai havertz":3.25,"nicolas jackson":5,"omar marmoush":4.5,"nestory irankunda":7,"ayoub el kaabi":4,"duckens nazon":12,"raul jimenez":3.5,"hazel mastouri":8,"livramento":6,"diomande":9,"salem al dawsari":8,"malen":5,"doku":8,"amir al ammari":15,"olise":2.5,"hwang hee chan":3.5,"suarez":4,"isak":5,"trezeguet":8,"gregoritsch":4,"ayew":6,"lukic":20,"cho gue sung":7.5,"semedo":20,"waterman":6.5,"sorloth":8,"jordy caceido":10,"frantzy pierrot":10,"promise david":13,"appolis":8,"gouiri":5,"toure":5,"shankland":6,"evidence makgopa":9,"mbappe":3.25,"jordan ayew":6,"ante budimir":6,"elye wahi":8,"ermedin demirovic":4.5,"aymen hussein":3.5,"anthony gordon":15,"bruno fernandes":4,"almiron":6,"messi":2};
 function getCote(joueur){return COTES[normalize(joueur)]||null;}
-function fmtEur(v){if(!v&&v!==0)return null;return Math.round(v)+'?';}
+function fmtEur(v){if(!v&&v!==0)return null;return Math.round(v)+'\u20ac';}
 
 function combN(n,k){if(k>n||k<0)return 0;if(k===0||k===n)return 1;var r=1;for(var i=0;i<k;i++)r=r*(n-i)/(i+1);return Math.round(r);}
 function combinations(arr,k){if(k===0)return[[]];if(arr.length<k)return[];var f=arr[0],r=arr.slice(1);return combinations(r,k-1).map(function(c){return[f].concat(c);}).concat(combinations(r,k));}
@@ -1069,10 +1071,10 @@ function renderDashboard(){
     // Detail selections
     var detailHTML=ticket.selections.map(function(s){
       var sst=getPSt(s.joueur,s.pays,s.type);
-      var _dotMap={tete:'var(--c-tete)',gagnant:'var(--c-gagne)',attente:'var(--border2)',depasse:'var(--c-depasse)',perdant:'var(--c-mort)'};
+      var _dotMap={tete:'var(--c-tete)',gagnant:'var(--c-gagne-light)',attente:'var(--border2)',depasse:'#666',perdant:'#444'};
       var dotC=_dotMap[sst]||'var(--border2)';
       var stLabel=ST_LABELS[sst]||sst;
-      var _stMap={tete:'color:var(--c-tete)',gagnant:'color:var(--c-gagne-light)',attente:'color:var(--muted2)',depasse:'color:var(--c-depasse)',perdant:'color:var(--c-mort);text-decoration:line-through'};
+      var _stMap={tete:'color:var(--c-tete)',gagnant:'color:var(--c-gagne-light)',attente:'color:var(--muted2)',depasse:'color:#666',perdant:'color:#444;text-decoration:line-through'};
       var stStyle=_stMap[sst]||'color:var(--muted2)';
       return '<div class="dash-sel-line"><div class="dash-sel-dot" style="background:'+dotC+'"></div><div class="dash-sel-name">'+esc(s.joueur)+'<span style="font-size:11px;color:var(--muted);font-weight:400"> . '+getFlagEmoji(s.pays)+' '+esc(s.pays)+'</span></div><span class="dash-sel-status" style="'+stStyle+'">'+stLabel+'</span></div>';
     }).join('');
