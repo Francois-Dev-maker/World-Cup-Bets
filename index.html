@@ -1384,7 +1384,7 @@ function buildSels(sys,existing){
 function getKnownPlayers(){
   var seen=new Map();
   getTickets().forEach(function(t){t.selections.forEach(function(s){var k=normalize(s.joueur)+'|'+normalize(s.pays)+'|'+s.type;if(!seen.has(k))seen.set(k,{joueur:s.joueur,pays:s.pays,type:s.type});});});
-  return Array.from(seen.values());
+  return Array.from(seen.values())
 }
 
 function attachAC(inp){
@@ -1405,7 +1405,7 @@ function attachAC(inp){
   inp.addEventListener('input',function(){var q=normalize(inp.value);if(q.length<1){closeAC();return;}openAC(getKnownPlayers().filter(function(p){return normalize(p.joueur).includes(q);}).slice(0,6));focusIdx=-1;});
   inp.addEventListener('keydown',function(e){
     var list=wrap.querySelector('.ac-list');if(!list)return;
-    var items=Array.from(list.querySelectorAll('.ac-item')));
+    var items=Array.from(list.querySelectorAll('.ac-item'))
     if(e.key==='ArrowDown'){e.preventDefault();focusIdx=Math.min(focusIdx+1,items.length-1);items.forEach(function(it,i){it.classList.toggle('focused',i===focusIdx);});}
     else if(e.key==='ArrowUp'){e.preventDefault();focusIdx=Math.max(focusIdx-1,0);items.forEach(function(it,i){it.classList.toggle('focused',i===focusIdx);});}
     else if(e.key==='Enter'&&focusIdx>=0){e.preventDefault();items[focusIdx].dispatchEvent(new MouseEvent('mousedown'));}
@@ -1415,7 +1415,7 @@ function attachAC(inp){
 }
 
 document.getElementById('ticketSysteme').addEventListener('change',function(){buildSels(this.value,getSelsValues());});
-function getSelsValues(){returnArray.from(document.querySelectorAll('.sel-row'))).map(function(r){return{joueur:r.querySelector('.sel-j').value,pays:r.querySelector('.sel-p').value,type:r.querySelector('.sel-t').value};});}
+function getSelsValues(){return Array.from(document.querySelectorAll('.sel-row')).map(function(r){return{joueur:r.querySelector('.sel-j').value,pays:r.querySelector('.sel-p').value,type:r.querySelector('.sel-t').value};});}
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show');editId=null;}
 document.getElementById('btnCancel').addEventListener('click',closeModal);
 document.getElementById('fabBtn').addEventListener('click',function(){openModal();});
