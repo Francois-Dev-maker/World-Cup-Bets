@@ -1067,9 +1067,11 @@ function renderDashboard(){
     // Detail selections
     var detailHTML=ticket.selections.map(function(s){
       var sst=getPSt(s.joueur,s.pays,s.type);
-      var dotC={tete:'var(--c-tete)',gagnant:'var(--c-gagne)',attente:'var(--border2)',depasse:'var(--c-depasse)',perdant:'var(--c-mort)'}[sst]||'var(--border2)';
+      var _dotMap={tete:'var(--c-tete)',gagnant:'var(--c-gagne)',attente:'var(--border2)',depasse:'var(--c-depasse)',perdant:'var(--c-mort)'};
+      var dotC=_dotMap[sst]||'var(--border2)';
       var stLabel=ST_LABELS[sst]||sst;
-      var stStyle={tete:'color:var(--c-tete)',gagnant:'color:var(--c-gagne-light)',attente:'color:var(--muted2)',depasse:'color:var(--c-depasse)',perdant:'color:var(--c-mort);text-decoration:line-through'}[sst]||'color:var(--muted2)';
+      var _stMap={tete:'color:var(--c-tete)',gagnant:'color:var(--c-gagne-light)',attente:'color:var(--muted2)',depasse:'color:var(--c-depasse)',perdant:'color:var(--c-mort);text-decoration:line-through'};
+      var stStyle=_stMap[sst]||'color:var(--muted2)';
       return '<div class="dash-sel-line"><div class="dash-sel-dot" style="background:'+dotC+'"></div><div class="dash-sel-name">'+esc(s.joueur)+'<span style="font-size:11px;color:var(--muted);font-weight:400"> . '+getFlagEmoji(s.pays)+' '+esc(s.pays)+'</span></div><span class="dash-sel-status" style="'+stStyle+'">'+stLabel+'</span></div>';
     }).join('');
     return '<div class="dash-ticket-row '+st+'" data-tid="'+ticket.id+'">'+
