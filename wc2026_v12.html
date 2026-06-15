@@ -347,6 +347,60 @@ main{padding:20px 24px}
 .sheet-kpi-n.muted{color:var(--muted2)}
 .sheet-kpi-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
 @media(max-width:600px){.tcard-sheet-body{grid-template-columns:1fr}.tcard-sheet{margin-top:16px;max-height:95vh}}
+
+/* ===== additions modele v3 ===== */
+.tbadge.passeur{background:rgba(150,152,160,.16);color:#b9b9c2;}
+.cote-badge.port{color:var(--rose-dim,#c98aa6);}
+/* cadre carte joueur selon pays */
+.pcard{border-top:2px solid transparent;border-bottom:2px solid transparent;}
+.pcard.fr-encours{border-top-color:var(--c-tete);border-bottom-color:var(--c-tete);}
+.pcard.fr-elim{border-top-color:#555;border-bottom-color:#555;}
+/* bandeau pays */
+.pays-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.pays-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border:1px solid var(--line);border-radius:20px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
+.pays-chip:hover{background:var(--panel2);}
+.pays-chip.active{border-color:var(--c-tete);color:var(--text);background:rgba(249,168,201,.08);}
+.pays-chip.elim{opacity:.55;text-decoration:line-through;}
+.pays-chip .pcn{font-weight:600;}
+.pays-chip .pcc{color:var(--muted2);font-size:10px;}
+.pays-x{border:none;background:rgba(255,255,255,.06);color:var(--muted2);border-radius:50%;width:16px;height:16px;line-height:14px;font-size:9px;cursor:pointer;padding:0;}
+.pays-x:hover{background:var(--c-tete);color:#1a1a1a;}
+/* jauge segments */
+.seg-wrap{position:relative;padding-top:11px;}
+.seg-row{display:flex;gap:3px;}
+.seg{flex:1;height:9px;border-radius:3px;background:#2c2c2c;}
+.seg-cursor{position:absolute;top:-1px;transform:translateX(-50%);font-size:9px;color:#fff;line-height:1;pointer-events:none;}
+.tcard-seg,.tk-seg{padding:2px 0;}
+/* analytics */
+.ana-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:14px 0 22px;}
+.ana-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;}
+.ana-h{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;}
+.ana-sub{font-size:9px;color:var(--muted2);text-transform:none;letter-spacing:0;}
+.donut-wrap{display:flex;align-items:center;gap:10px;}
+.donut-leg{display:flex;flex-direction:column;gap:5px;flex:1;}
+.dleg{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:5px;}
+.dleg:hover,.dleg.on{background:var(--panel2);color:var(--text);}
+.dleg-dot{width:9px;height:9px;border-radius:2px;}
+.dleg-n{margin-left:auto;color:var(--text);font-weight:600;}
+.mbar{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.mbar-l{width:58px;font-size:10px;color:var(--muted);flex:none;}
+.mbar-tk{flex:1;height:8px;background:#262626;border-radius:4px;overflow:hidden;}
+.mbar-f{height:100%;border-radius:4px;}
+.mbar-v{font-size:11px;font-weight:600;min-width:54px;text-align:right;}
+.prow{display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 6px;border-radius:6px;cursor:pointer;}
+.prow:hover{background:var(--panel2);}
+.prow-n{font-weight:600;color:var(--text);}
+.prow-f{color:var(--muted2);font-size:10px;}
+.prow-g{margin-left:auto;color:var(--c-gagne-light);font-weight:600;}
+/* liste tickets dash */
+.tklist{display:flex;flex-direction:column;gap:6px;}
+.tk-line{display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;cursor:pointer;background:var(--panel);}
+.tk-line:hover{background:var(--panel2);border-color:var(--c-tete);}
+.tk-nom{font-weight:700;min-width:80px;}
+.tk-sys{font-size:11px;color:var(--muted2);min-width:34px;}
+.tk-seg{flex:1;max-width:340px;}
+.tk-frac{font-size:12px;color:var(--muted);min-width:36px;text-align:center;}
+.tk-gain{font-weight:700;min-width:70px;text-align:right;}
 </style></head>
 <body>
 <header>
@@ -647,8 +701,41 @@ function init(){
 }
 
 /* ============================================================
+   COULEURS UNIFIÉES + helpers d'état affichable
+   ============================================================ */
+/* outcome affichable d'une sélection : gagne | perdu | tete | depasse | attente */
+function outcomeOf(j,p,t){
+  const st = statusOf(j,p,t), py = paysStatus(p);
+  if(py==='elimine') return st==='tete' ? 'gagne' : 'perdu';
+  return st; // en course : tete | depasse | attente
+}
+function outcomeSel(s){ return outcomeOf(s.joueur,s.pays,s.type); }
+const SEG_COL = { gagne:'var(--c-gagne-light)', tete:'var(--c-tete)', attente:'#e6e6e6', depasse:'var(--c-depasse)', perdu:'#45453f' };
+const PRIO    = { gagne:0, tete:1, attente:2, depasse:3, perdu:4 };
+function nameStyle(o){ /* couleur de police du nom */
+  if(o==='tete')  return 'color:var(--c-tete)';
+  if(o==='gagne') return 'color:var(--c-gagne-light)';
+  if(o==='perdu') return 'color:#7a7a72';
+  return ''; // attente / depasse en course -> neutre
+}
+function frameCls(p){ return paysStatus(p)==='elimine' ? 'fr-elim' : 'fr-encours'; }
+
+/* jauge à segments : 1 segment / sélection (couleur = outcome), curseur ▼ au-dessus du seuil X */
+function segGauge(tk, X){
+  const segs = tk.selections.map(s=>outcomeSel(s)).sort((a,b)=>PRIO[a]-PRIO[b]);
+  const N = segs.length;
+  const bars = segs.map(o=>`<span class="seg" style="background:${SEG_COL[o]}"></span>`).join('');
+  const left = ((X-0.5)/N*100);
+  return `<div class="seg-wrap"><div class="seg-cursor" style="left:${left}%">▼</div><div class="seg-row">${bars}</div></div>`;
+}
+
+/* ============================================================
    RENDER
    ============================================================ */
+let FILTER_PAYS = '';   // filtre pays (Joueurs + Tickets)
+let TFILTER_CAT = null; // filtre statut (onglet Tickets)
+let DASH_FILTER = null; // filtre liste tickets (Vue d'ensemble)
+
 function render(){
   const R = WC.computeAll(RAW, P, PAYS);
   renderHeader(R);
@@ -656,7 +743,7 @@ function render(){
   else if(TAB==='joueurs') renderJoueurs(R);
   else if(TAB==='tickets') renderTickets(R);
   else if(TAB==='alertes') renderAlertes(R);
-  if(OVERLAY_ID) refreshOverlayInline();
+  if(OVERLAY_ID) drawOverlay();
 }
 
 function hs(n,l,c){ return `<div class="h-stat"><span class="h-stat-n" style="color:${c||'var(--rose)'}">${n}</span><span class="h-stat-l">${l}</span></div>`; }
@@ -664,83 +751,120 @@ function renderHeader(R){
   const T0=R.totaux; let nTete=0; for(const k in P) if(P[k].status==='tete') nTete++;
   let nElim=0; for(const k in PAYS) if(PAYS[k].status==='elimine') nElim++;
   document.getElementById('hStats').innerHTML =
-    hs(fmt(T0.gainProjete),'projeté gelé','var(--green)') +
-    hs(fmt(T0.gainAcquis),'acquis','var(--green)') +
+    hs(fmt(T0.gainProjete),'projeté gelé','var(--c-gagne-light)') +
+    hs(fmt(T0.gainAcquis),'acquis','var(--c-gagne-light)') +
     hs(fmt(T0.gainPotentiel),'plafond','var(--muted2)') +
     hs(nTete,'en tête') +
-    hs(T0.nVirtuel,'virt. gagnants','var(--green)') +
+    hs(T0.nVirtuel,'virt. gagnants','var(--c-gagne-light)') +
     hs(T0.nEnCours,'en cours') +
     hs(nElim,'pays sortis','var(--muted2)');
 }
 
-/* ---- DASH ---- */
 function cat(r){ if(r.statut==='gagne') return 'gagne'; if(r.statut==='perdu') return 'mort'; if(r.virtuel) return 'vivant'; if(r.provG===r.X-1) return 'proche'; return 'encours'; }
+
+/* ---- bandeau pays (filtre + bascule éliminé) ---- */
+function paysBanner(){
+  const m={}; T.forEach(t=>t.selections.forEach(s=>{ const k=pKeyN(s.pays); (m[k]=m[k]||{nom:s.pays,n:0}).n++; }));
+  const arr=Object.entries(m).map(([k,v])=>({k,...v})).sort((a,b)=>b.n-a.n);
+  let h=`<div class="pays-bar">`;
+  arr.forEach(p=>{ const elim=paysStatus(p.nom)==='elimine'; const act=FILTER_PAYS===p.k;
+    h+=`<span class="pays-chip ${elim?'elim':''} ${act?'active':''}" onclick="filtPays('${p.k}')">
+        <span class="pcn">${p.nom}</span><span class="pcc">${elim?'sorti':p.n}</span>
+        <button class="pays-x" title="bascule en course/éliminé" onclick="event.stopPropagation();togglePays('${esc(p.nom)}')">${elim?'↺':'✕'}</button></span>`; });
+  h+=`</div>`;
+  return h;
+}
+function filtPays(k){ FILTER_PAYS = (FILTER_PAYS===k)?'':k; render(); }
+
+/* ---- VUE D'ENSEMBLE ---- */
 function renderDash(R){
   const T0=R.totaux;
-  const cats={gagne:0,vivant:0,proche:0,encours:0,mort:0};
-  R.tickets.forEach(r=>cats[cat(r)]++);
-  // exposition top
-  const expo=Object.entries(R.exposition).map(([k,v])=>({k,...v}));
-  expo.sort((a,b)=>b.potentiel-a.potentiel);
-  const teteList = expo.filter(e=> (P[e.k]||{}).status==='tete');
+  const cats={gagne:0,vivant:0,proche:0,encours:0,mort:0}; R.tickets.forEach(r=>cats[cat(r)]++);
   let html='';
+  // 3 mesures
   html += `<div class="gains-row">
-    <div class="gain-kpi"><div class="gain-n" style="color:var(--green)">${fmt(T0.gainProjete)}</div><div class="gain-l">Projeté · gelé maintenant</div></div>
-    <div class="gain-kpi"><div class="gain-n" style="color:var(--green)">${fmt(T0.gainAcquis)}</div><div class="gain-l">Acquis · définitif</div></div>
+    <div class="gain-kpi"><div class="gain-n" style="color:var(--c-gagne-light)">${fmt(T0.gainProjete)}</div><div class="gain-l">Projeté · gelé maintenant</div></div>
+    <div class="gain-kpi"><div class="gain-n" style="color:var(--c-gagne-light)">${fmt(T0.gainAcquis)}</div><div class="gain-l">Acquis · définitif</div></div>
     <div class="gain-kpi"><div class="gain-n" style="color:var(--muted2)">${fmt(T0.gainPotentiel)}</div><div class="gain-l">Plafond · max possible</div></div>
   </div>`;
-  html += `<div class="kpi-row">
-    ${kpiCell(cats.gagne,'terminés gagnés','var(--c-gagne)','gagne')}
-    ${kpiCell(cats.vivant,'virt. gagnants','var(--c-gagne)','vivant')}
-    ${kpiCell(cats.proche,'proches (-1)','var(--c-tete)','proche')}
-    ${kpiCell(cats.encours,'en cours','var(--text)','encours')}
-    ${kpiCell(cats.mort,'terminés perdus','var(--c-mort)','mort')}
-  </div>`;
-  // joueurs en tete
-  html += `<div class="label">En tête — ${teteList.length} joueurs</div><div class="tete-strip">`;
-  if(!teteList.length) html += `<div class="empty" style="padding:10px">Aucun joueur en tête</div>`;
-  teteList.forEach(e=>{ const a=e.k.split('|'); const neg=(P[e.k]||{}).n_egalite||1;
-    html += `<button class="tete-pill" onclick="goPlayer('${a[0].replace(/'/g,"\\'")}')"><div class="tete-pill-name">${cap(a[0])}${neg>1?` <span class="pill-cote">÷${neg}</span>`:''}</div><div class="tete-pill-sub">${a[1]} · porte ${fmt(e.potentiel)}</div></button>`; });
+  // analytics row : donut + barres montants + proches + top pays
+  html += `<div class="ana-row">`;
+  // donut
+  const legend=[['gagne','Gagnés','var(--c-gagne)'],['vivant','Virt. gagnants','var(--c-gagne-light)'],['proche','Proches','var(--c-tete)'],['encours','En cours','var(--c-depasse)'],['mort','Morts','#45453f']];
+  html += `<div class="ana-card"><div class="ana-h">Tickets par statut <span class="ana-sub">clic = filtre</span></div>
+    <div class="donut-wrap">${donutSVG(cats,legend)}<div class="donut-leg">${legend.map(([k,l,c])=>`<div class="dleg ${DASH_FILTER===k?'on':''}" onclick="setDashFilter('${k}')"><span class="dleg-dot" style="background:${c}"></span>${l}<span class="dleg-n">${cats[k]||0}</span></div>`).join('')}</div></div></div>`;
+  // barres montants
+  const mx=Math.max(T0.gainPotentiel,1);
+  const bar=(l,v,c)=>`<div class="mbar"><span class="mbar-l">${l}</span><div class="mbar-tk"><div class="mbar-f" style="width:${Math.max(2,v/mx*100)}%;background:${c}"></div></div><span class="mbar-v" style="color:${c}">${fmt(v)}</span></div>`;
+  html += `<div class="ana-card"><div class="ana-h">Montants €</div>
+    ${bar('Projeté',T0.gainProjete,'var(--c-gagne-light)')}
+    ${bar('Acquis',T0.gainAcquis,'var(--c-gagne-light)')}
+    ${bar('Plafond',T0.gainPotentiel,'var(--c-tete)')}</div>`;
+  // proches (à 1 joueur d'un palier)
+  const proches=R.tickets.filter(r=>r.provG===r.X-1 && r.statut!=='perdu').sort((a,b)=>b.gainProjete-a.gainProjete);
+  html += `<div class="ana-card"><div class="ana-h">À 1 joueur d'un palier <span class="ana-sub">${proches.length} · clic = ouvrir</span></div>`;
+  if(!proches.length) html+=`<div class="empty">—</div>`;
+  proches.slice(0,6).forEach(r=>{ const tk=T.find(x=>x.id===r.id);
+    html+=`<div class="prow" onclick="openOverlay('${r.id}')"><span class="prow-n">${tk.nom}</span><span class="prow-f">${r.provG+1}/${r.X}</span><span class="prow-g">+${fmt(r.paliers[0].gainProjete)}</span></div>`; });
   html += `</div>`;
-  // top exposition
-  html += `<div class="label">Exposition — joueurs qui portent le plus de gain potentiel</div><div class="pgrid">`;
-  expo.slice(0,12).forEach(e=>{ const a=e.k.split('|'); const v=selViewByKey(e.k);
-    html += `<div class="pcard ${v.cls}"><div class="pcard-top"><div class="pcard-name">${cap(a[0])}</div><div class="pcard-count hi">${fmt(e.potentiel)}</div></div>
-      <div class="pcard-meta"><span>${a[1]}</span><span class="tbadge ${a[2]}">${a[2]}</span><span class="cote-badge">×${coteByKey(e.k)}</span></div></div>`; });
+  // top pays
+  const pm={}; T.forEach(t=>t.selections.forEach(s=>{ const k=pKeyN(s.pays); (pm[k]=pm[k]||{nom:s.pays,n:0}).n++; }));
+  const pa=Object.values(pm).sort((a,b)=>b.n-a.n).slice(0,7); const pmax=pa[0]?pa[0].n:1;
+  html += `<div class="ana-card"><div class="ana-h">Top pays <span class="ana-sub">clic = filtre tickets</span></div>`;
+  pa.forEach(p=>{ html+=`<div class="mbar" style="cursor:pointer" onclick="goPaysTickets('${pKeyN(p.nom)}')"><span class="mbar-l" style="width:78px">${p.nom}</span><div class="mbar-tk"><div class="mbar-f" style="width:${p.n/pmax*100}%;background:var(--c-tete)"></div></div><span class="mbar-v">${p.n}</span></div>`; });
+  html += `</div></div>`;
+  // liste tickets segmentée
+  html += `<div class="label">Tous les tickets ${DASH_FILTER?`· filtre <span class="chart-reset" onclick="setDashFilter(null)">✕ ${DASH_FILTER}</span>`:''}</div><div class="tklist">`;
+  R.tickets.forEach(r=>{ if(DASH_FILTER && cat(r)!==DASH_FILTER) return; html+=tkLine(r); });
   html += `</div>`;
   document.getElementById('dash').innerHTML = html;
 }
-function kpiCell(n,l,c,k){ return `<div class="kpi" onclick="goTabTickets('${k}')"><div class="kpi-n" style="color:${c}">${n}</div><div class="kpi-l">${l}</div></div>`; }
+function setDashFilter(k){ DASH_FILTER=(DASH_FILTER===k)?null:k; render(); }
+function goPaysTickets(k){ FILTER_PAYS=k; goTabByName('Tickets','tickets'); }
+
+function donutSVG(cats,legend){
+  const total=legend.reduce((s,[k])=>s+(cats[k]||0),0)||1; const R=52,C=2*Math.PI*R; let off=0,segs='';
+  legend.forEach(([k,,col])=>{ const v=cats[k]||0; if(!v) return; const len=v/total*C;
+    segs+=`<circle r="${R}" cx="70" cy="70" fill="none" stroke="${col}" stroke-width="15" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)" style="cursor:pointer" onclick="setDashFilter('${k}')"></circle>`; off+=len; });
+  const tot=legend.reduce((s,[k])=>s+(cats[k]||0),0);
+  return `<svg viewBox="0 0 140 140" width="132" height="132">${segs}<text x="70" y="68" text-anchor="middle" fill="var(--text)" font-size="28" font-weight="700">${tot}</text><text x="70" y="88" text-anchor="middle" fill="var(--muted2)" font-size="9" letter-spacing="1.5">TICKETS</text></svg>`;
+}
+
+/* ligne ticket segmentée (dash + réutilisable) */
+function tkLine(r){
+  const tk=T.find(x=>x.id===r.id);
+  const badge = r.statut==='gagne'?'win':r.statut==='perdu'?'idle':r.virtuel?'win':cat(r)==='proche'?'close':'idle';
+  const blab  = r.statut==='gagne'?'gagné':r.statut==='perdu'?'perdu':r.virtuel?'virt.':cat(r)==='proche'?'proche':'en cours';
+  return `<div class="tk-line" onclick="openOverlay('${r.id}')">
+    <span class="tk-nom">${tk.nom}</span><span class="tk-sys">${tk.systeme}</span>
+    <div class="tk-seg">${segGauge(tk,r.X)}</div>
+    <span class="tk-frac">${r.provG}/${r.X}</span>
+    <span class="tcard-badge ${badge}">${blab}</span>
+    <span class="tk-gain" style="color:var(--c-gagne-light)">${fmt(r.gainProjete)}</span></div>`;
+}
 
 /* ---- JOUEURS ---- */
 function renderJoueurs(R){
-  // panneau pays
-  const paysMap={}; T.forEach(t=>t.selections.forEach(s=>{ const pk=pKeyN(s.pays); (paysMap[pk]=paysMap[pk]||{nom:s.pays,n:0}).n++; }));
-  const paysArr=Object.entries(paysMap).map(([k,v])=>({k,...v})).sort((a,b)=>b.n-a.n);
-  let html = `<div class="label">Pays — clic = bascule en course / éliminé (fige tous ses joueurs)</div><div class="flag-row" style="flex-wrap:wrap;gap:6px;margin-bottom:18px">`;
-  paysArr.forEach(p=>{ const elim=PAYS[p.k]&&PAYS[p.k].status==='elimine';
-    html += `<button class="palier-chip ${elim?'mort':''}" onclick="togglePays('${p.nom.replace(/'/g,"\\'")}')" title="${elim?'éliminé':'en course'}"><span class="pk">${p.nom}</span> <span class="pl">${elim?'✕ sorti':'• '+p.n}</span></button>`; });
-  html += `</div>`;
-  // grille joueurs
-  const expo=R.exposition;
-  const players=Object.keys(RAW.players).map(k=>({k, ...RAW.players[k]}));
-  // count tickets
+  let html = `<div class="label">Pays — clic = filtrer · ✕ = bascule en course / éliminé</div>${paysBanner()}`;
+  html += `<div class="filters"><input id="pfilter" placeholder="Filtrer un joueur…" value="${FILTER}" oninput="FILTER=this.value;render()"></div>`;
   const cnt={}; T.forEach(t=>t.selections.forEach(s=>{ const k=eKey(s.joueur,s.pays,s.type); cnt[k]=(cnt[k]||0)+1; }));
-  players.sort((a,b)=>(cnt[b.k]||0)-(cnt[a.k]||0));
-  html += `<div class="filters"><input id="pfilter" placeholder="Filtrer un joueur…" value="${FILTER}" oninput="FILTER=this.value;renderJoueurs(WC.computeAll(RAW,P,PAYS))"></div>`;
+  const players=Object.keys(RAW.players).map(k=>({k,...RAW.players[k]})).sort((a,b)=>(cnt[b.k]||0)-(cnt[a.k]||0));
+  const expo=R.exposition;
   html += `<div class="pgrid">`;
   players.forEach(pl=>{
-    const a=pl.k.split('|'); if(FILTER && !cap(a[0]).toLowerCase().includes(FILTER.toLowerCase())) return;
-    const cur=getP(pl.joueur,pl.pays,pl.type); const v=selView(pl);
+    const a=pl.k.split('|');
+    if(FILTER && !cap(a[0]).toLowerCase().includes(FILTER.toLowerCase())) return;
+    if(FILTER_PAYS && pKeyN(pl.pays)!==FILTER_PAYS) return;
+    const cur=getP(pl.joueur,pl.pays,pl.type); const o=outcomeOf(pl.joueur,pl.pays,pl.type);
     const neg=cur.n_egalite||1; const ex=expo[pl.k];
-    html += `<div class="pcard ${v.cls}"><div class="pcard-top">
-        <div class="pcard-name">${cap(a[0])}</div>
+    html += `<div class="pcard ${frameCls(pl.pays)}"><div class="pcard-top">
+        <div class="pcard-name" style="${nameStyle(o)}">${cap(a[0])}</div>
         <div class="pcard-count ${cnt[pl.k]>=4?'hi':''}">${cnt[pl.k]||0}×</div></div>
-      <div class="pcard-meta"><span>${pl.pays}</span><span class="tbadge ${pl.type}">${pl.type}</span><span class="cote-badge">×${pl.cote_ref}</span>${ex?`<span class="cote-badge" style="color:var(--rose-dim)">porte ${fmt(ex.potentiel)}</span>`:''}</div>
+      <div class="pcard-meta"><span>${pl.pays}${paysStatus(pl.pays)==='elimine'?' ✕':''}</span><span class="tbadge ${pl.type}">${pl.type}</span><span class="cote-badge">×${pl.cote_ref}</span>${ex?`<span class="cote-badge port">porte ${fmt(ex.potentiel)}</span>`:''}</div>
       <div class="pcard-btns">
         ${STATUSES.map(s=>`<button class="sbtn ${cur.status===s?'on-'+s:''}" onclick="setStatus('${esc(pl.joueur)}','${esc(pl.pays)}','${pl.type}','${s}')">${SLABELS[s]}</button>`).join('')}
       </div>
-      ${cur.status==='tete' ? `<div class="pcard-btns" style="margin-top:4px;align-items:center"><span class="cote-badge">égalité ÷${neg} → cote ${(Math.max(pl.cote_ref/neg,1)).toFixed(2)}</span>
+      ${cur.status==='tete' ? `<div class="pcard-btns" style="margin-top:4px;align-items:center"><span class="cote-badge">égalité ÷${neg} → ${(Math.max(pl.cote_ref/neg,1)).toFixed(2)}</span>
         <button class="mini-sbtn" onclick="setNeg('${esc(pl.joueur)}','${esc(pl.pays)}','${pl.type}',${neg-1})">−</button>
         <button class="mini-sbtn" onclick="setNeg('${esc(pl.joueur)}','${esc(pl.pays)}','${pl.type}',${neg+1})">+</button></div>`:''}
     </div>`;
@@ -750,87 +874,78 @@ function renderJoueurs(R){
 }
 
 /* ---- TICKETS ---- */
-let TFILTER_CAT=null;
 function setTFilter(c){ TFILTER_CAT=(TFILTER_CAT===c)?null:c; render(); }
 function renderTickets(R){
-  let html = `<div class="legend">
-    <span class="leg" onclick="setTFilter('gagne')"><span class="leg-dot" style="background:var(--c-gagne)"></span>terminé gagné</span>
-    <span class="leg" onclick="setTFilter('vivant')"><span class="leg-dot" style="background:var(--c-gagne)"></span>virt. gagnant</span>
+  let html = `<div class="label">Pays — clic = filtrer · ✕ = bascule en course / éliminé</div>${paysBanner()}`;
+  html += `<div class="legend">
+    <span class="leg" onclick="setTFilter('gagne')"><span class="leg-dot" style="background:var(--c-gagne)"></span>gagné</span>
+    <span class="leg" onclick="setTFilter('vivant')"><span class="leg-dot" style="background:var(--c-gagne-light)"></span>virt. gagnant</span>
     <span class="leg" onclick="setTFilter('proche')"><span class="leg-dot" style="background:var(--c-tete)"></span>proche</span>
-    <span class="leg" onclick="setTFilter('encours')"><span class="leg-dot" style="background:var(--muted2)"></span>en cours</span>
-    <span class="leg" onclick="setTFilter('mort')"><span class="leg-dot" style="background:var(--c-mort)"></span>terminé perdu</span>
+    <span class="leg" onclick="setTFilter('encours')"><span class="leg-dot" style="background:var(--c-depasse)"></span>en cours</span>
+    <span class="leg" onclick="setTFilter('mort')"><span class="leg-dot" style="background:#45453f"></span>perdu</span>
     ${TFILTER_CAT?`<span class="chart-reset" onclick="setTFilter(null)">✕ ${TFILTER_CAT}</span>`:''}</div>`;
   html += `<div class="tgrid">`;
   R.tickets.forEach(r=>{
     const c=cat(r); if(TFILTER_CAT && c!==TFILTER_CAT) return;
     const tk=T.find(x=>x.id===r.id);
-    const cls = r.statut==='perdu'?'is-dead': (r.G>0?'has-win': (r.provG>0?'has-tete':''));
-    const badge = r.statut==='gagne'?'<span class="tcard-badge win">gagné</span>' : r.statut==='perdu'?'<span class="tcard-badge idle">perdu</span>' : r.virtuel?'<span class="tcard-badge win">virt. gagnant</span>' : c==='proche'?'<span class="tcard-badge close">proche</span>':'<span class="tcard-badge idle">en cours</span>';
-    const pct = Math.min(100, Math.round(r.provG/r.X*100));
-    html += `<div class="tcard ${cls}">
+    if(FILTER_PAYS && !tk.selections.some(s=>pKeyN(s.pays)===FILTER_PAYS)) return;
+    const badge=r.statut==='gagne'?'win':r.statut==='perdu'?'idle':r.virtuel?'win':c==='proche'?'close':'idle';
+    const blab=r.statut==='gagne'?'gagné':r.statut==='perdu'?'perdu':r.virtuel?'virt. gagnant':c==='proche'?'proche':'en cours';
+    html += `<div class="tcard">
       <div class="tcard-head" onclick="openOverlay('${r.id}')">
-        <span class="tcard-nom">${tk.nom}</span>
-        <span class="tcard-sys">${tk.systeme}</span>
-        <div class="tcard-prog"><div class="pbar-wrap"><div class="pbar" style="width:${pct}%;background:${pct>=100?'var(--c-gagne)':'var(--c-tete)'}"></div></div>
-        <span class="tcard-frac">${r.provG}/${r.X}</span></div>
-        <span class="tcard-gain-head" style="color:var(--green)">${fmt(r.gainProjete)}</span>
-        <span class="tcard-expand-icon">▸</span>
-      </div>
-      <div class="palier-strip">${palierChips(r)}</div>
+        <span class="tcard-nom">${tk.nom}</span><span class="tcard-sys">${tk.systeme}</span>
+        <span class="tcard-frac">${r.provG}/${r.X}</span>
+        <span class="tcard-badge ${badge}">${blab}</span>
+        <span class="tcard-gain-head" style="color:var(--c-gagne-light)">${fmt(r.gainProjete)}</span>
+        <span class="tcard-expand-icon">▸</span></div>
+      <div class="tcard-seg">${segGauge(tk,r.X)}</div>
     </div>`;
   });
   html += `</div>`;
   document.getElementById('tickets').innerHTML = html;
 }
-function palierChips(r){
-  return r.paliers.map(p=>{
-    let cl=''; if(p.gainAcquis>0&&p.nLive===0) cl='atteint'; else if(p.mort) cl='mort'; else if(p.manqueProv<=1) cl='next';
-    const g = p.gainAcquis>0 ? p.gainAcquis : p.gainProjete;
-    return `<span class="palier-chip ${cl}"><span class="pk">${p.label}</span>${p.mort?'<span class="pl">mort</span>':`<span class="pl">−${p.manqueProv}j</span><span class="palier-gain" style="color:var(--green)">${fmt(p.gainProjete)}</span>`}</span>`;
-  }).join('');
-}
 
 /* ---- ALERTES ---- */
 function renderAlertes(R){
   let html='';
-  const proche=R.tickets.filter(r=>r.provG===r.X-1 && r.statut!=='perdu');
   const virt=R.tickets.filter(r=>r.virtuel);
+  const proche=R.tickets.filter(r=>r.provG===r.X-1 && r.statut!=='perdu');
   if(virt.length){ html+=`<div class="label">Virtuellement gagnants (gelé maintenant)</div>`;
     virt.forEach(r=>{ const tk=T.find(x=>x.id===r.id); html+=`<div class="alert win" onclick="openOverlay('${r.id}')"><strong>${tk.nom}</strong> ${tk.systeme} — <span class="ok">${r.provG}/${r.X}</span> · projeté <span class="gain-tag">${fmt(r.gainProjete)}</span></div>`; }); }
   if(proche.length){ html+=`<div class="label">À une sélection du palier</div>`;
-    proche.forEach(r=>{ const tk=T.find(x=>x.id===r.id); html+=`<div class="alert close" onclick="openOverlay('${r.id}')"><strong>${tk.nom}</strong> ${tk.systeme} — il manque <span class="hi">1</span> en tête pour ${r.X}/${r.N}</div>`; }); }
-  // pays a surveiller : pays en course avec joueurs en tete
+    proche.forEach(r=>{ const tk=T.find(x=>x.id===r.id); html+=`<div class="alert close" onclick="openOverlay('${r.id}')"><strong>${tk.nom}</strong> ${tk.systeme} — il manque <span class="hi">1</span> pour ${r.X}/${r.N} · +${fmt(r.paliers[0].gainProjete)}</div>`; }); }
   if(!html) html=`<div class="empty">Rien à signaler</div>`;
   document.getElementById('alertes').innerHTML = html;
 }
 
-/* ---- OVERLAY ---- */
+/* ---- OVERLAY (détail ticket) ---- */
 function openOverlay(id){ OVERLAY_ID=id; SHEET_K=null; document.body.style.overflow='hidden'; drawOverlay(); document.getElementById('tcardOverlay').classList.add('open'); }
 function closeOverlay(e){ if(e&&e.target&&!e.target.classList.contains('tcard-overlay')&&!e.target.classList.contains('tcard-sheet-close'))return; document.getElementById('tcardOverlay').classList.remove('open'); document.body.style.overflow=''; OVERLAY_ID=null; SHEET_K=null; }
-function refreshOverlayInline(){ if(OVERLAY_ID) drawOverlay(); }
+function filterK(k){ SHEET_K=k; drawOverlay(); }
+function deployedCombos(tk){ const [X,N]=tk.systeme.split('/').map(Number); const out=[]; for(let k=X;k<=N;k++){ WC.kcombos(tk.selections.length,k).forEach(idx=>out.push({k,sels:idx.map(i=>tk.selections[i])})); } return out; }
 function drawOverlay(){
   const tk=T.find(x=>x.id===OVERLAY_ID); if(!tk) return;
   const r=WC.computeTicket(tk,P,PAYS,MISE,null);
-  // combos detail
-  const combos=deployedCombos(tk).map(c=>{ let prod=1,dead=false,allG=true,allPg=true; c.sels.forEach(s=>{ const v=selView(s); const ce=Math.max(s.cote/v.neg,1); prod*=ce; if(v.outcome==='perdue')dead=true; if(v.outcome!=='gagnee')allG=false; if(v.prov!=='gagnante')allPg=false; }); 
+  const combos=deployedCombos(tk).map(c=>{ let prod=1,dead=false,allG=true,allPg=true; c.sels.forEach(s=>{ const o=outcomeSel(s); const neg=negOf(s.joueur,s.pays,s.type); const ce=Math.max(s.cote/neg,1); prod*=ce; if(o==='perdu')dead=true; if(o!=='gagne')allG=false; if(!(o==='gagne'||o==='tete'))allPg=false; });
     return {k:c.k, sels:c.sels, gain:prod*MISE, state: dead?'dead':(allG?'finalized':'live')}; });
   let combosF=combos.filter(c=>SHEET_K?c.k===SHEET_K:true).sort((a,b)=>b.gain-a.gain);
-  const sel = tk.selections.map(s=>{ const v=selView(s); const pe=tk.id;
-    return `<div class="sheet-sel ${v.cls}"><span class="sheet-sel-dot sel-dot ${v.cls}"></span>
-      <span class="sheet-sel-name">${cap(s.joueur)}</span>
+  const sel = tk.selections.map(s=>{ const o=outcomeSel(s); const neg=negOf(s.joueur,s.pays,s.type); const cur=statusOf(s.joueur,s.pays,s.type);
+    return `<div class="sheet-sel"><span class="seg" style="width:9px;height:9px;flex:none;border-radius:50%;background:${SEG_COL[o]}"></span>
+      <span class="sheet-sel-name" style="${nameStyle(o)}">${cap(s.joueur)}</span>
       <span class="sel-pays">${s.pays}${paysStatus(s.pays)==='elimine'?' ✕':''}</span>
-      <span class="sel-cote">×${s.cote}${v.neg>1?'÷'+v.neg:''}</span>
-      <span class="sel-actions" style="opacity:1">${STATUSES.map(st=>`<button class="mini-sbtn ${v.status===st?'on-'+st:''}" onclick="setStatus('${esc(s.joueur)}','${esc(s.pays)}','${s.type}','${st}')">${SLABELS[st]}</button>`).join('')}
-      <button class="mini-sbtn ${paysStatus(s.pays)==='elimine'?'on-perdant':''}" title="pays" onclick="togglePays('${esc(s.pays)}')">⚑</button></span></div>`; }).join('');
-  const paliers = r.paliers.map(p=>{ let cl=p.mort?'mort':(p.manqueProv<=1?'next':''); 
-    return `<div class="palier-bar-row ${cl}" onclick="filterK(${p.k})" style="cursor:pointer">
+      <span class="sel-cote">×${s.cote}${neg>1?'÷'+neg:''}</span>
+      <span class="sel-actions">${STATUSES.map(st=>`<button class="mini-sbtn ${cur===st?'on-'+st:''}" onclick="setStatus('${esc(s.joueur)}','${esc(s.pays)}','${s.type}','${st}')">${SLABELS[st]}</button>`).join('')}
+      <button class="mini-sbtn ${paysStatus(s.pays)==='elimine'?'on-depasse':''}" title="pays en course / éliminé" onclick="togglePays('${esc(s.pays)}')">⚑</button></span></div>`; }).join('');
+  const paliers = r.paliers.map(p=>{ const cl=p.mort?'mort':(p.manqueProv<=1?'next':''); const w=Math.min(100,p.gainProjete/(r.gainPotentiel||1)*100*4);
+    return `<div class="palier-bar-row ${cl}" onclick="filterK(${p.k})">
       <span class="palier-bar-lbl">${p.label}</span>
-      <div class="palier-bar-track"><div class="palier-bar-fill" style="width:${Math.min(100,p.gainProjete/(r.gainPotentiel||1)*100*4)}%;background:${p.mort?'var(--c-mort)':'var(--green)'}"></div></div>
+      <div class="palier-bar-track"><div class="palier-bar-fill" style="width:${w}%;background:${p.mort?'#45453f':'var(--c-gagne-light)'}"></div></div>
       <span class="palier-bar-val">${p.mort?'mort':fmt(p.gainProjete)}</span></div>`; }).join('');
-  const list = combosF.slice(0,120).map(c=>`<div class="ut-row u-${c.state}"><span class="ut-names">${c.sels.map(s=>cap(s.joueur)).join(' + ')}</span><span class="ut-gain">${fmt(c.gain)}</span></div>`).join('');
+  const gcol={finalized:'var(--c-gagne-light)',live:'var(--c-tete)',dead:'#7a7a72'};
+  const list = combosF.slice(0,140).map(c=>`<div class="ut-row u-${c.state}"><span class="ut-names">${c.sels.map(s=>`<span style="${nameStyle(outcomeSel(s))}">${cap(s.joueur)}</span>`).join(' + ')}</span><span class="ut-gain" style="color:${gcol[c.state]}">${fmt(c.gain)}</span></div>`).join('');
   document.getElementById('tcardOverlay').innerHTML = `<div class="tcard-sheet">
     <div class="tcard-sheet-head"><span class="tcard-nom" style="font-size:15px">${tk.nom}</span><span class="tcard-sys">${tk.systeme}</span>
-      <span class="tcard-badge ${r.virtuel?'win':'idle'}">${r.statut==='gagne'?'gagné':r.statut==='perdu'?'perdu':r.virtuel?'virt. gagnant':'en cours'}</span>
+      <span class="tcard-badge ${r.virtuel||r.statut==='gagne'?'win':r.statut==='perdu'?'idle':'idle'}">${r.statut==='gagne'?'gagné':r.statut==='perdu'?'perdu':r.virtuel?'virt. gagnant':'en cours'}</span>
       <button class="tcard-sheet-close" onclick="closeOverlay()">✕</button></div>
     <div class="tcard-sheet-body">
       <div class="tcard-sheet-col">
@@ -839,6 +954,7 @@ function drawOverlay(){
           <div class="sheet-kpi"><div class="sheet-kpi-n green">${fmt(r.gainAcquis)}</div><div class="sheet-kpi-l">acquis</div></div>
           <div class="sheet-kpi"><div class="sheet-kpi-n muted">${fmt(r.gainPotentiel)}</div><div class="sheet-kpi-l">plafond</div></div>
         </div>
+        <div class="tcard-seg" style="margin:4px 0 10px">${segGauge(tk,r.X)}</div>
         <div><div class="tcard-sheet-section">Sélections — ${r.provG}/${r.X} provisoires · ${r.G} acquises</div>${sel}</div>
       </div>
       <div class="tcard-sheet-col">
@@ -847,18 +963,13 @@ function drawOverlay(){
       </div>
     </div></div>`;
 }
-function filterK(k){ SHEET_K=k; drawOverlay(); }
-function deployedCombos(tk){ const [X,N]=tk.systeme.split('/').map(Number); const out=[]; for(let k=X;k<=N;k++){ WC.kcombos(tk.selections.length,k).forEach(idx=>out.push({k, sels:idx.map(i=>tk.selections[i])})); } return out; }
 
 /* ---- nav / helpers ---- */
 function goTab(id,btn){ TAB=id; document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active')); if(btn)btn.classList.add('active'); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.getElementById(id).classList.add('active'); render(); }
-function goTabTickets(c){ TFILTER_CAT=c; TAB='tickets'; document.querySelectorAll('nav button').forEach((b,i)=>b.classList.toggle('active', b.textContent.trim()==='Tickets')); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.getElementById('tickets').classList.add('active'); render(); }
-function goPlayer(n){ TAB='joueurs'; FILTER=cap(n); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.textContent.trim()==='Joueurs')); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.getElementById('joueurs').classList.add('active'); render(); }
-function toggleAll(){}
+function goTabByName(name,id){ TAB=id; document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.textContent.trim()===name)); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.getElementById(id).classList.add('active'); render(); }
+function goPlayer(n){ FILTER=cap(n); goTabByName('Joueurs','joueurs'); }
 function cap(s){ return (s||'').split(' ').map(w=>w?w.charAt(0).toUpperCase()+w.slice(1):w).join(' '); }
 function esc(s){ return String(s).replace(/'/g,"\\'"); }
-function coteByKey(k){ const p=RAW.players[k]; return p?p.cote_ref:'?'; }
-function selViewByKey(k){ const p=RAW.players[k]; return p?selView(p):{cls:'attente'}; }
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeOverlay(); });
 init();
