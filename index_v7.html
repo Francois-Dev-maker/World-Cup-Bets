@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0c0c0e">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0c0c0e">
 <title>WC 2026</title>
 <style>:root{--bg:#0c0c0e;--panel:#161618;--panel2:#1e1e21;--line:#2a2a2d;--text:#e9e9ec;--muted:#9a9aa2;--muted2:#666;--rose:#f9a8c9;--c-tete:#f9a8c9;--c-gagne:#3d9e7a;--c-gagne-light:#6ee7b7;--c-depasse:#888880;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -281,7 +281,7 @@ function negOf(j,p,t){ var v=getP(j,p,t).n_egalite; return v||1; }
 function paysStatus(p){ var o=PAYS[pKeyN(p)]; return o?o.status:"en_course"; }
 function outcomeOf(j,p,t){ var st=statusOf(j,p,t), py=paysStatus(p); if(py==="elimine") return st==="tete"?"gagne":"perdu"; return st; }
 function outcomeSel(s){ return outcomeOf(s.joueur,s.pays,s.type); }
-function nameStyle(o){ if(o==="tete") return "color:var(--c-tete)"; if(o==="gagne") return "color:var(--c-gagne-light)"; if(o==="perdu") return "color:#7a7a72"; return ""; }
+function nameStyle(o){ if(o==="tete") return "color:var(--c-tete)"; if(o==="gagne") return "color:var(--c-gagne-light)"; if(o==="perdu") return "color:#7a7a72"; if(o==="depasse") return "color:var(--c-depasse)"; return "color:#e6e6e6"; }
 function frameCls(p){ return paysStatus(p)==="elimine" ? "fr-elim" : "fr-encours"; }
 
 function setStatus(j,p,t,s){
@@ -456,7 +456,7 @@ function drawSheet(){
   var combos=deployedCombos(tk), i, c, prod, dead, allG, allPg, m, o, neg, ce, out=[];
   for(i=0;i<combos.length;i++){ c=combos[i]; prod=1; dead=false; allG=true; allPg=true;
     for(m=0;m<c.sels.length;m++){ o=outcomeSel(c.sels[m]); neg=negOf(c.sels[m].joueur,c.sels[m].pays,c.sels[m].type); ce=Math.max(c.sels[m].cote/neg,1); prod*=ce; if(o==="perdu")dead=true; if(o!=="gagne")allG=false; if(!(o==="gagne"||o==="tete"))allPg=false; }
-    out.push({k:c.k,sels:c.sels,gain:prod*MISE,state:dead?"dead":(allG?"finalized":"live")}); }
+    out.push({k:c.k,sels:c.sels,gain:prod*MISE,state:dead?"dead":(allG?"finalized":(allPg?"projete":"live"))}); }
   var fil=[]; for(i=0;i<out.length;i++){ if(!SHEET_K||out[i].k===SHEET_K) fil.push(out[i]); }
   fil.sort(function(a,b){ return b.gain-a.gain; });
   // selections
@@ -472,7 +472,7 @@ function drawSheet(){
   for(i=0;i<r.paliers.length;i++){ p=r.paliers[i]; cl=p.mort?"mort":(p.manqueProv<=1?"next":""); w=Math.min(100,p.gainProjete/(r.gainPotentiel||1)*100*4);
     pal+="<div class='pal-row "+cl+"' onclick=\"filterK("+p.k+")\"><span class='pal-l'>"+p.label+"</span><div class='pal-tk'><div class='pal-f' style='width:"+w+"%;background:"+(p.mort?"#45453f":"var(--c-gagne-light)")+"'></div></div><span class='pal-v'>"+(p.mort?"mort":fmt(p.gainProjete))+"</span></div>"; }
   // combos
-  var gcol={finalized:"var(--c-gagne-light)",live:"var(--c-tete)",dead:"#7a7a72"};
+  var gcol={finalized:"var(--c-gagne-light)",projete:"var(--c-tete)",live:"#cfcfcf",dead:"#6a6a6a"};
   var list="", names;
   for(i=0;i<fil.length && i<120;i++){ names=""; for(m=0;m<fil[i].sels.length;m++){ names+=(m?" + ":"")+"<span style='"+nameStyle(outcomeSel(fil[i].sels[m]))+"'>"+cap(fil[i].sels[m].joueur)+"</span>"; }
     list+="<div class='ut'><span class='ut-n'>"+names+"</span><span class='ut-g' style='color:"+gcol[fil[i].state]+"'>"+fmt(fil[i].gain)+"</span></div>"; }

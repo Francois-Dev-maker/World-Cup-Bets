@@ -401,27 +401,17 @@ main{padding:20px 24px}
 .tk-seg{flex:1;max-width:340px;}
 .tk-frac{font-size:12px;color:var(--muted);min-width:36px;text-align:center;}
 .tk-gain{font-weight:700;min-width:70px;text-align:right;}
+/* fix v3.1 : variable vert menthe + boutons overlay visibles */
+:root{--c-gagne-light:#6ee7b7;}
+.mini-sbtn{background:#1e1e21;border:1px solid #33333a;color:#b4b4bc;border-radius:6px;padding:6px 9px;font-size:10px;font-weight:700;cursor:pointer;opacity:1;}
+.mini-sbtn:hover{color:#fff;border-color:#4a4a52;}
+.sel-actions{opacity:1 !important;display:inline-flex;gap:4px;flex-wrap:wrap;align-items:center;}
+.sheet-sel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid var(--line);}
 </style></head>
 <body>
-<header>
-  <div class="logo">WC 2026</div>
-  <div class="h-stats" id="hStats"></div>
-  <div style="display:flex;align-items:center;gap:10px;margin-left:12px">
-    <span id="syncIndicator" style="font-size:10px;letter-spacing:.08em;color:#555">● sync</span>
-  </div>
-</header>
-<nav>
-  <button class="active" onclick="goTab('dash',this)">Vue d'ensemble</button>
-  <button onclick="goTab('joueurs',this)">Joueurs</button>
-  <button onclick="goTab('tickets',this)">Tickets</button>
-  <button onclick="goTab('alertes',this)">Alertes</button>
-</nav>
-<main>
-  <div id="dash" class="tab active"></div>
-  <div id="joueurs" class="tab"></div>
-  <div id="tickets" class="tab"></div>
-  <div id="alertes" class="tab"></div>
-</main>
+<header><div class="logo">WC 2026</div><div class="h-stats" id="hStats"></div><div style="display:flex;align-items:center;gap:10px;margin-left:12px"><span id="syncIndicator" style="font-size:10px;letter-spacing:.08em;color:#555">● sync</span></div></header>
+<nav><button class="active" onclick="goTab('dash',this)">Vue d'ensemble</button><button onclick="goTab('joueurs',this)">Joueurs</button><button onclick="goTab('tickets',this)">Tickets</button><button onclick="goTab('alertes',this)">Alertes</button></nav>
+<main><div id="dash" class="tab active"></div><div id="joueurs" class="tab"></div><div id="tickets" class="tab"></div><div id="alertes" class="tab"></div></main>
 <div id="tcardOverlay" class="tcard-overlay" onclick="closeOverlay(event)"></div>
 <script>
 /* WC2026 - moteur de calcul - ES5 pur, ASCII only (compatible Safari iOS et Chrome) */
@@ -712,11 +702,12 @@ function outcomeOf(j,p,t){
 function outcomeSel(s){ return outcomeOf(s.joueur,s.pays,s.type); }
 const SEG_COL = { gagne:'var(--c-gagne-light)', tete:'var(--c-tete)', attente:'#e6e6e6', depasse:'var(--c-depasse)', perdu:'#45453f' };
 const PRIO    = { gagne:0, tete:1, attente:2, depasse:3, perdu:4 };
-function nameStyle(o){ /* couleur de police du nom */
-  if(o==='tete')  return 'color:var(--c-tete)';
-  if(o==='gagne') return 'color:var(--c-gagne-light)';
-  if(o==='perdu') return 'color:#7a7a72';
-  return ''; // attente / depasse en course -> neutre
+function nameStyle(o){
+  if(o==='tete')    return 'color:var(--c-tete)';
+  if(o==='gagne')   return 'color:var(--c-gagne-light)';
+  if(o==='perdu')   return 'color:#7a7a72';
+  if(o==='depasse') return 'color:var(--c-depasse)';
+  return 'color:#e6e6e6'; // attente -> blanc
 }
 function frameCls(p){ return paysStatus(p)==='elimine' ? 'fr-elim' : 'fr-encours'; }
 
@@ -927,7 +918,7 @@ function drawOverlay(){
   const tk=T.find(x=>x.id===OVERLAY_ID); if(!tk) return;
   const r=WC.computeTicket(tk,P,PAYS,MISE,null);
   const combos=deployedCombos(tk).map(c=>{ let prod=1,dead=false,allG=true,allPg=true; c.sels.forEach(s=>{ const o=outcomeSel(s); const neg=negOf(s.joueur,s.pays,s.type); const ce=Math.max(s.cote/neg,1); prod*=ce; if(o==='perdu')dead=true; if(o!=='gagne')allG=false; if(!(o==='gagne'||o==='tete'))allPg=false; });
-    return {k:c.k, sels:c.sels, gain:prod*MISE, state: dead?'dead':(allG?'finalized':'live')}; });
+    return {k:c.k, sels:c.sels, gain:prod*MISE, state: dead?'dead':(allG?'finalized':(allPg?'projete':'live'))}; });
   let combosF=combos.filter(c=>SHEET_K?c.k===SHEET_K:true).sort((a,b)=>b.gain-a.gain);
   const sel = tk.selections.map(s=>{ const o=outcomeSel(s); const neg=negOf(s.joueur,s.pays,s.type); const cur=statusOf(s.joueur,s.pays,s.type);
     return `<div class="sheet-sel"><span class="seg" style="width:9px;height:9px;flex:none;border-radius:50%;background:${SEG_COL[o]}"></span>
@@ -941,7 +932,7 @@ function drawOverlay(){
       <span class="palier-bar-lbl">${p.label}</span>
       <div class="palier-bar-track"><div class="palier-bar-fill" style="width:${w}%;background:${p.mort?'#45453f':'var(--c-gagne-light)'}"></div></div>
       <span class="palier-bar-val">${p.mort?'mort':fmt(p.gainProjete)}</span></div>`; }).join('');
-  const gcol={finalized:'var(--c-gagne-light)',live:'var(--c-tete)',dead:'#7a7a72'};
+  const gcol={finalized:'var(--c-gagne-light)',projete:'var(--c-tete)',live:'#cfcfcf',dead:'#6a6a6a'};
   const list = combosF.slice(0,140).map(c=>`<div class="ut-row u-${c.state}"><span class="ut-names">${c.sels.map(s=>`<span style="${nameStyle(outcomeSel(s))}">${cap(s.joueur)}</span>`).join(' + ')}</span><span class="ut-gain" style="color:${gcol[c.state]}">${fmt(c.gain)}</span></div>`).join('');
   document.getElementById('tcardOverlay').innerHTML = `<div class="tcard-sheet">
     <div class="tcard-sheet-head"><span class="tcard-nom" style="font-size:15px">${tk.nom}</span><span class="tcard-sys">${tk.systeme}</span>
