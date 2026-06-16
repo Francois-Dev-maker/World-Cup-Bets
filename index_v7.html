@@ -97,6 +97,23 @@ main{padding:10px;}
 .ut-g{font-weight:700;white-space:nowrap;}
 .reset{color:var(--muted2);margin-left:4px;}
 .empty{color:var(--muted2);padding:8px 0;font-size:12px;}
+/* option B : bouton + formulaire ticket */
+.add-row{padding:8px 12px 0}
+.add-tk-btn{background:var(--c-tete);color:#1a1a1a;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;width:100%}
+.form-body{padding:12px 14px 28px;overflow:auto;max-height:calc(85vh - 46px)}
+.form-line{display:flex;gap:8px;margin-bottom:10px}
+.form-line input{flex:1}
+.form-x{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.form-sec{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 0 6px}
+.form-sel{display:flex;gap:5px;align-items:center;margin-bottom:6px}
+.form-body input,.form-body select{background:#161618;border:1px solid #303036;color:#e6e6e6;border-radius:7px;padding:9px 8px;font-size:14px;min-width:0}
+.form-sel input:nth-child(1){flex:2}
+.form-sel input:nth-child(2){flex:1}
+.form-sel input[type=number]{width:56px;flex:none}
+.form-sel #f_n0,.form-sel input[title=egalite]{width:42px}
+.form-actions{display:flex;gap:8px;margin-top:14px}
+.form-actions .mini{flex:1;padding:11px}
+.form-actions .add-tk-btn{flex:2}
 </style></head>
 <body>
 <header><div class="htop"><div class="logo">WC 2026</div><span id="syncDot">○</span></div><div class="kpis" id="kpis"></div></header>
@@ -272,7 +289,8 @@ var SEED_RAW = {"meta": {"schema": "v3", "mise": 0.1, "regle_cote": "cote = inli
 /* WC2026 mobile - ES5 strict (Safari iOS), ASCII only. S'appuie sur WC (engine.js). */
 "use strict";
 var MISE = (SEED_RAW.meta && SEED_RAW.meta.mise) || 0.10;
-var T = SEED_RAW.tickets;
+var T = (SEED_RAW.tickets||[]).slice();
+function SRC(){ return {meta:SEED_RAW.meta, tickets:T}; }
 var P = {};      // "j|p|t" -> {status,n_egalite}
 var PAYS = {};   // "p" -> {status}
 var TAB = "tickets";
@@ -365,6 +383,9 @@ function loadSupa(){
   xhr("GET","pays_status?select=pays_key,status&limit=500", null, null, function(x){
     if(x.status>=200&&x.status<300){ try{ var rows=JSON.parse(x.responseText),i,r; for(i=0;i<rows.length;i++){ r=rows[i]; if(r.pays_key&&r.status) PAYS[nrm(r.pays_key)]={status:r.status}; } render(); }catch(e){} }
   });
+  xhr("GET","tickets?select=id,nom,systeme,ref,selections&limit=2000", null, null, function(x){
+    if(x.status>=200&&x.status<300){ try{ var rows=JSON.parse(x.responseText),i,arr=[]; if(rows&&rows.length){ for(i=0;i<rows.length;i++) arr.push(normalizeTicket(rows[i])); T=arr; try{localStorage.setItem("wc26m_tickets",JSON.stringify(T));}catch(e2){} render(); } }catch(e){} }
+  });
 }
 function subscribe(){
   var ws; try{ ws=new WebSocket(SUPA_URL.replace("https://","wss://")+"/realtime/v1/websocket?apikey="+SUPA_KEY+"&vsn=1.0.0"); }catch(e){ return; }
@@ -372,11 +393,15 @@ function subscribe(){
   ws.onopen=function(){
     ws.send(JSON.stringify({topic:"realtime:public:player_status",event:"phx_join",payload:{},ref:"1"}));
     ws.send(JSON.stringify({topic:"realtime:public:pays_status",event:"phx_join",payload:{},ref:"2"}));
+    ws.send(JSON.stringify({topic:"realtime:public:tickets",event:"phx_join",payload:{},ref:"3"}));
     hb=setInterval(function(){ if(ws.readyState===1) ws.send(JSON.stringify({topic:"phoenix",event:"heartbeat",payload:{},ref:"h"})); },25000);
   };
-  ws.onmessage=function(e){ try{ var m=JSON.parse(e.data); if(m.event==="INSERT"||m.event==="UPDATE"){ var rec=m.payload&&m.payload.record,a;
-    if(rec&&rec.player_key&&rec.status){ a=rec.player_key.split("|"); P[nrm(a[0])+"|"+nrm(a[1]||"")+"|"+nrm(a[2]||"")]={status:rec.status,n_egalite:rec.n_egalite||1}; render(); }
-    else if(rec&&rec.pays_key&&rec.status){ PAYS[nrm(rec.pays_key)]={status:rec.status}; render(); } } }catch(_){} };
+  ws.onmessage=function(e){ try{ var m=JSON.parse(e.data); var rec=m.payload&&m.payload.record,a,ix,nt,did,q,w,nr;
+    if(m.event==="INSERT"||m.event==="UPDATE"){
+      if(rec&&rec.player_key&&rec.status){ a=rec.player_key.split("|"); P[nrm(a[0])+"|"+nrm(a[1]||"")+"|"+nrm(a[2]||"")]={status:rec.status,n_egalite:rec.n_egalite||1}; render(); }
+      else if(rec&&rec.pays_key&&rec.status){ PAYS[nrm(rec.pays_key)]={status:rec.status}; render(); }
+      else if(rec&&rec.id&&rec.selections){ nt=normalizeTicket(rec); ix=-1; for(q=0;q<T.length;q++) if(T[q].id===nt.id) ix=q; if(ix>=0)T[ix]=nt; else T.push(nt); try{localStorage.setItem("wc26m_tickets",JSON.stringify(T));}catch(e2){} render(); }
+    } else if(m.event==="DELETE"&&m.payload&&m.payload.old_record&&m.payload.old_record.id){ did=String(m.payload.old_record.id); nr=[]; for(w=0;w<T.length;w++) if(T[w].id!==did) nr.push(T[w]); T=nr; try{localStorage.setItem("wc26m_tickets",JSON.stringify(T));}catch(e3){} render(); } }catch(_){} };
   ws.onclose=function(){ clearInterval(hb); setTimeout(subscribe,5000); };
   ws.onerror=function(){ try{ ws.close(); }catch(e){} };
 }
@@ -388,6 +413,7 @@ function init(){
   for(k in SEED_RAW.pays){ PAYS[k]={status:"en_course"}; }
   try{ var sp=JSON.parse(localStorage.getItem("wc26m_v3")||"{}"); for(k in sp) P[k]=sp[k]; }catch(e){}
   try{ var sy=JSON.parse(localStorage.getItem("wc26m_pays")||"{}"); for(k in sy) PAYS[k]=sy[k]; }catch(e){}
+  try{ var st=JSON.parse(localStorage.getItem("wc26m_tickets")||"null"); if(st&&st.length) T=st; }catch(e){}
   render(); loadSupa(); subscribe();
   if(document.addEventListener) document.addEventListener("visibilitychange", function(){ if(!document.hidden) loadSupa(); });
 }
@@ -400,10 +426,10 @@ function badgeOf(r){ var c=cat(r); var cls=(r.statut==="gagne"||r.virtuel)?"b-wi
   var lab=r.statut==="gagne"?"GAGNE":r.statut==="perdu"?"PERDU":r.virtuel?"VIRT.":c==="proche"?"PROCHE":"VIVANT"; return "<span class='badge "+cls+"'>"+lab+"</span>"; }
 
 function render(){
-  var R=WC.computeAll(SEED_RAW, P, PAYS);
+  var R=WC.computeAll(SRC(), P, PAYS);
   renderHeader(R);
   if(TAB==="tickets") renderTickets(R); else renderJoueurs(R);
-  if(SHEET_ID) drawSheet();
+  if(SHEET_ID && SHEET_ID!=="__form__") drawSheet();
 }
 function renderHeader(R){
   var T0=R.totaux, nTete=0, k;
@@ -427,7 +453,7 @@ function paysBar(){
 function filtPays(k){ FILTER_PAYS=(FILTER_PAYS===k)?"":k; render(); }
 
 function renderTickets(R){
-  var h=paysBar(), i, r, tk;
+  var h="<div class='add-row'><button class='add-tk-btn' onclick=\"openTicketForm()\">+ Ajouter un ticket</button></div>"+paysBar(), i, r, tk;
   h+="<div class='list'>";
   for(i=0;i<R.tickets.length;i++){ r=R.tickets[i]; tk=null;
     for(var z=0;z<T.length;z++) if(T[z].id===r.id) tk=T[z];
@@ -445,10 +471,10 @@ function renderJoueurs(R){
   var h=paysBar(), i, k, a, pl, cur, o, neg, ex;
   var cnt={}, j, s, kk;
   for(i=0;i<T.length;i++){ for(j=0;j<T[i].selections.length;j++){ s=T[i].selections[j]; kk=eKey(s.joueur,s.pays,s.type); cnt[kk]=(cnt[kk]||0)+1; } }
-  var keys=[]; for(k in SEED_RAW.players) keys.push(k);
+  var cat=derivePlayers(); var keys=[]; for(k in cat) keys.push(k);
   keys.sort(function(x,y){ return (cnt[y]||0)-(cnt[x]||0); });
   h+="<div class='plist'>";
-  for(i=0;i<keys.length;i++){ k=keys[i]; pl=SEED_RAW.players[k]; a=k.split("|");
+  for(i=0;i<keys.length;i++){ k=keys[i]; pl=cat[k]; a=k.split("|");
     if(FILTER_PAYS && pKeyN(pl.pays)!==FILTER_PAYS) continue;
     cur=getP(pl.joueur,pl.pays,pl.type); o=outcomeOf(pl.joueur,pl.pays,pl.type); neg=cur.n_egalite||1; ex=R.exposition[k];
     h+="<div class='pcard "+frameCls(pl.pays)+"'>"+
@@ -501,7 +527,7 @@ function drawSheet(){
   for(i=0;i<fil.length && i<120;i++){ names=""; for(m=0;m<fil[i].sels.length;m++){ names+=(m?" + ":"")+"<span style='"+nameStyle(outcomeSel(fil[i].sels[m]))+"'>"+cap(fil[i].sels[m].joueur)+"</span>"; }
     list+="<div class='ut'><span class='ut-n'>"+names+"</span><span class='ut-g' style='color:"+gcol[fil[i].state]+"'>"+fmt(fil[i].gain)+"</span></div>"; }
   el("sheet").innerHTML=
-    "<div class='sh-head'><span class='sh-title'>"+tk.nom+"</span><span class='tc-sys'>"+tk.systeme+"</span>"+badgeOf(r)+"<button class='sh-x' onclick='closeSheet()'>\u2715</button></div>"+
+    "<div class='sh-head'><span class='sh-title'>"+tk.nom+"</span><span class='tc-sys'>"+tk.systeme+"</span>"+badgeOf(r)+"<button class='mini' style='margin-left:auto' onclick=\"deleteTicket('"+tk.id+"')\">Suppr.</button><button class='sh-x' onclick='closeSheet()'>\u2715</button></div>"+
     "<div class='sh-body'>"+
       "<div class='sh-kpis'>"+
         "<div class='kpi'><div class='kpi-n' style='color:var(--c-gagne-light)'>"+fmt(r.gainProjete)+"</div><div class='kpi-l'>projete</div></div>"+
@@ -518,6 +544,63 @@ function drawSheet(){
 
 /* ---------- nav ---------- */
 function goTab(t){ TAB=t; var b=document.querySelectorAll(".tabbar button"),i; for(i=0;i<b.length;i++) b[i].className=(b[i].getAttribute("data-t")===t?"on":""); render(); }
+/* ===== Option B (mobile) : catalogue derive + formulaire ticket ===== */
+function normalizeTicket(row){ var sels=[],i,x,src=row.selections||[]; for(i=0;i<src.length;i++){ x=src[i]; sels.push({joueur:x.joueur,pays:x.pays,type:x.type,cote:(x.cote!=null?+x.cote:null),n_egalite:x.n_egalite||1}); } return {id:String(row.id),nom:row.nom,systeme:row.systeme,ref:row.ref||null,selections:sels}; }
+function derivePlayers(){ var m={},i,j,s,k,t; for(i=0;i<T.length;i++){ t=T[i]; for(j=0;j<(t.selections||[]).length;j++){ s=t.selections[j]; k=eKey(s.joueur,s.pays,s.type); if(!m[k]) m[k]={k:k,joueur:s.joueur,pays:s.pays,type:s.type,cote_ref:(s.cote!=null?s.cote:((SEED_RAW.players[k]&&SEED_RAW.players[k].cote_ref)||1))}; } } return m; }
+var FORM_SELS=[];
+function fval(id){ var e=el(id); return e?e.value:""; }
+function openTicketForm(){ SHEET_ID="__form__"; FORM_SELS=[{joueur:"",pays:"",type:"buteur",cote:"",neg:1}]; el("sheet").className="sheet open"; el("scrim").className="scrim on"; drawForm(); }
+function formRead(){ var i; for(i=0;i<FORM_SELS.length;i++){ FORM_SELS[i].joueur=fval("f_j"+i); FORM_SELS[i].pays=fval("f_p"+i); FORM_SELS[i].type=fval("f_t"+i); FORM_SELS[i].cote=fval("f_c"+i); FORM_SELS[i].neg=fval("f_n"+i)||1; } }
+function formAddSel(){ formRead(); FORM_SELS.push({joueur:"",pays:"",type:"buteur",cote:"",neg:1}); drawForm(); }
+function formDelSel(i){ formRead(); FORM_SELS.splice(i,1); if(!FORM_SELS.length)FORM_SELS.push({joueur:"",pays:"",type:"buteur",cote:"",neg:1}); drawForm(); }
+function drawForm(){
+  var cat=derivePlayers(), names={}, paysSet={}, kk, n2, i, s;
+  for(kk in cat){ names[cat[kk].joueur]=1; paysSet[cat[kk].pays]=1; }
+  var jn=[],pn=[]; for(n2 in names)jn.push(n2); for(n2 in paysSet)pn.push(n2); jn.sort(); pn.sort();
+  var dlJ="<datalist id='dlJ'>"; for(i=0;i<jn.length;i++) dlJ+="<option value=\""+jn[i].replace(/"/g,"")+"\">"; dlJ+="</datalist>";
+  var dlP="<datalist id='dlP'>"; for(i=0;i<pn.length;i++) dlP+="<option value=\""+pn[i].replace(/"/g,"")+"\">"; dlP+="</datalist>";
+  var rows=""; for(i=0;i<FORM_SELS.length;i++){ s=FORM_SELS[i];
+    rows+="<div class='form-sel'>"+
+      "<input id='f_j"+i+"' list='dlJ' placeholder='Joueur' value=\""+(s.joueur||"").replace(/"/g,"&quot;")+"\">"+
+      "<input id='f_p"+i+"' list='dlP' placeholder='Pays' value=\""+(s.pays||"").replace(/"/g,"&quot;")+"\">"+
+      "<select id='f_t"+i+"'><option value='buteur'"+(s.type==="buteur"?" selected":"")+">buteur</option><option value='passeur'"+(s.type==="passeur"?" selected":"")+">passeur</option></select>"+
+      "<input id='f_c"+i+"' type='number' step='0.01' placeholder='cote' value=\""+(s.cote||"")+"\">"+
+      "<input id='f_n"+i+"' type='number' min='1' value=\""+(s.neg||1)+"\" title='egalite'>"+
+      "<button class='mini' onclick='formDelSel("+i+")'>\u2715</button></div>"; }
+  var N=FORM_SELS.length;
+  el("sheet").innerHTML=
+    "<div class='sh-head'><span class='sh-title'>Nouveau ticket</span><button class='sh-x' onclick='closeSheet()'>\u2715</button></div>"+
+    "<div class='form-body'>"+dlJ+dlP+
+    "<div class='form-line'><input id='f_nom' placeholder='Nom (ex 49k)' value=\""+fval("f_nom").replace(/"/g,"&quot;")+"\"><input id='f_ref' placeholder='Ref' value=\""+fval("f_ref").replace(/"/g,"&quot;")+"\"></div>"+
+    "<div class='form-line'><label class='form-x'>Systeme <input id='f_x' type='number' min='1' max='"+N+"' value=\""+(fval("f_x")||N)+"\"> / "+N+"</label></div>"+
+    "<div class='form-sec'>Selections ("+N+")</div>"+rows+
+    "<button class='add-tk-btn' style='margin-top:8px' onclick='formAddSel()'>+ selection</button>"+
+    "<div class='form-actions'><button class='mini' onclick='closeSheet()'>Annuler</button><button class='add-tk-btn' onclick='saveTicketForm()'>Enregistrer</button></div>"+
+    "</div>";
+}
+function saveTicketForm(){
+  formRead();
+  var nom=fval("f_nom"),X=parseInt(fval("f_x"),10),N=FORM_SELS.length,i;
+  nom=nom?nom.replace(/^\s+|\s+$/g,""):"";
+  if(!nom){ alert("Nom requis"); return; }
+  if(!(X>=1&&X<=N)){ alert("Systeme invalide : 1 <= X <= "+N); return; }
+  var cat=derivePlayers(), nameMap={}, kk; for(kk in cat) nameMap[nrm(cat[kk].joueur)]=cat[kk].joueur;
+  var sels=[],s,j,canon;
+  for(i=0;i<FORM_SELS.length;i++){ s=FORM_SELS[i];
+    if(!s.joueur||!s.pays||!s.cote){ alert("Selection "+(i+1)+" : joueur, pays et cote requis"); return; }
+    j=(""+s.joueur).replace(/^\s+|\s+$/g,""); canon=nameMap[nrm(j)]; if(canon)j=canon;
+    sels.push({joueur:j,pays:(""+s.pays).replace(/^\s+|\s+$/g,""),type:s.type,cote:+s.cote,n_egalite:Math.max(1,parseInt(s.neg,10)||1)}); }
+  var ref=fval("f_ref").replace(/^\s+|\s+$/g,"");
+  saveTicket({id:String((new Date()).getTime()),nom:nom,systeme:X+"/"+N,ref:(ref||null),selections:sels});
+}
+function saveTicket(tk){ var ix=-1,i; for(i=0;i<T.length;i++) if(T[i].id===tk.id) ix=i; if(ix>=0)T[ix]=tk; else T.push(tk);
+  try{ localStorage.setItem("wc26m_tickets",JSON.stringify(T)); }catch(e){}
+  closeSheet(); render();
+  xhr("POST","tickets?on_conflict=id", JSON.stringify({id:tk.id,nom:tk.nom,systeme:tk.systeme,ref:tk.ref,selections:tk.selections,updated_at:new Date().toISOString()}), {Prefer:"resolution=merge-duplicates,return=minimal"}, null);
+}
+function deleteTicket(id){ if(!confirm("Supprimer ce ticket ?"))return; var nr=[],i; for(i=0;i<T.length;i++) if(T[i].id!==id) nr.push(T[i]); T=nr; try{ localStorage.setItem("wc26m_tickets",JSON.stringify(T)); }catch(e){} closeSheet(); render();
+  xhr("DELETE","tickets?id=eq."+encodeURIComponent(id), null, null, null); }
+
 init();
 
 </script>

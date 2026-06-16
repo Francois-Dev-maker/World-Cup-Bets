@@ -409,6 +409,21 @@ main{padding:20px 24px}
 .sheet-sel{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;padding:7px 0;border-bottom:1px solid var(--line);}
 .sheet-sel-name{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sheet-sel .sel-pays,.sheet-sel .sel-cote,.sheet-sel .tbadge,.sheet-sel .seg{flex:none;white-space:nowrap;}
+/* option B : bouton + formulaire ticket */
+.add-row{margin:0 0 10px}
+.add-tk-btn{background:var(--c-tete);color:#1a1a1a;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.add-tk-btn:hover{filter:brightness(1.08)}
+.form-sheet{max-width:640px}
+.form-body{padding:14px 16px;max-height:72vh;overflow:auto}
+.form-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.form-x{font-size:12px;color:var(--muted);display:inline-flex;align-items:center}
+.form-sec{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 6px}
+.form-sel{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.form-body input,.form-body select{background:#1a1a1d;border:1px solid #33333a;color:#e6e6e6;border-radius:6px;padding:7px 8px;font-size:12px}
+.form-body input::placeholder{color:#6a6a72}
+.form-sel input:first-child{flex:1 1 120px}
+.form-sel input:nth-child(2){flex:1 1 90px}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
 </style></head>
 <body>
 <header><div class="logo">WC 2026</div><div class="h-stats" id="hStats"></div><div style="display:flex;align-items:center;gap:10px;margin-left:12px"><span id="syncIndicator" style="font-size:10px;letter-spacing:.08em;color:#555">● sync</span></div></header>
@@ -585,7 +600,8 @@ var RAW = {"meta": {"schema": "v3", "mise": 0.1, "regle_cote": "cote = inline du
    WC2026 PC - application (nouveau modele) - s'appuie sur WC (engine.js)
    ============================================================ */
 const MISE = (RAW.meta && RAW.meta.mise) || 0.10;
-const T = RAW.tickets;
+var TICKETS = (RAW.tickets||[]).slice();
+function SRC(){ return {meta:RAW.meta, tickets:TICKETS}; }
 
 /* ---- etat dynamique (cle = engine.selKey) ---- */
 let P = {};       // "joueur|pays|type" -> {status, n_egalite}
@@ -681,18 +697,25 @@ async function loadSupa(){
   }
   const pr = await supaFetch('pays_status','pays_key,status');
   if(pr && pr.length){ pr.forEach(r=>{ if(r.pays_key&&r.status) PAYS[WC.norm(r.pays_key)]={status:r.status}; }); }
+  const tkr = await supaFetch('tickets','id,nom,systeme,ref,selections');
+  if(tkr && tkr.length){ TICKETS = tkr.map(normalizeTicket); localStorage.setItem('wc26_tickets', JSON.stringify(TICKETS)); }
   localStorage.setItem('wc26_v3', JSON.stringify(P));
   render();
 }
+function normalizeTicket(row){ return { id:String(row.id), nom:row.nom, systeme:row.systeme, ref:row.ref||null,
+  selections:(row.selections||[]).map(function(x){ return {joueur:x.joueur,pays:x.pays,type:x.type,cote:(x.cote!=null?+x.cote:null),n_egalite:x.n_egalite||1}; }) }; }
 function subscribe(){
   const ws = new WebSocket(SUPA_URL.replace('https://','wss://')+'/realtime/v1/websocket?apikey='+SUPA_KEY+'&vsn=1.0.0');
   let hb;
   ws.onopen=()=>{ ws.send(JSON.stringify({topic:'realtime:public:player_status',event:'phx_join',payload:{},ref:'1'}));
                  ws.send(JSON.stringify({topic:'realtime:public:pays_status',event:'phx_join',payload:{},ref:'2'}));
+                 ws.send(JSON.stringify({topic:'realtime:public:tickets',event:'phx_join',payload:{},ref:'3'}));
                  hb=setInterval(()=>ws.readyState===1&&ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'h'})),25000); };
   ws.onmessage=e=>{ try{ const m=JSON.parse(e.data); if(m.event==='INSERT'||m.event==='UPDATE'){ const rec=m.payload&&m.payload.record;
       if(rec&&rec.player_key&&rec.status){ const a=rec.player_key.split('|'); P[WC.norm(a[0])+'|'+WC.norm(a[1]||'')+'|'+WC.norm(a[2]||'')]={status:rec.status,n_egalite:rec.n_egalite||1}; render(); }
-      else if(rec&&rec.pays_key&&rec.status){ PAYS[WC.norm(rec.pays_key)]={status:rec.status}; render(); } } }catch(_){} };
+      else if(rec&&rec.pays_key&&rec.status){ PAYS[WC.norm(rec.pays_key)]={status:rec.status}; render(); }
+      else if(rec&&rec.id&&rec.selections){ var nt=normalizeTicket(rec); var ix=TICKETS.findIndex(function(x){return x.id===nt.id;}); if(ix>=0)TICKETS[ix]=nt; else TICKETS.push(nt); localStorage.setItem('wc26_tickets',JSON.stringify(TICKETS)); render(); } }
+      else if(m.event==='DELETE'&&m.payload&&m.payload.old_record&&m.payload.old_record.id){ var did=String(m.payload.old_record.id); TICKETS=TICKETS.filter(function(x){return x.id!==did;}); localStorage.setItem('wc26_tickets',JSON.stringify(TICKETS)); render(); } }catch(_){} };
   ws.onclose=()=>{ clearInterval(hb); setTimeout(subscribe,5000); };
   ws.onerror=()=>ws.close();
 }
@@ -708,6 +731,7 @@ function init(){
   // override local
   try{ const sp=JSON.parse(localStorage.getItem('wc26_v3')||'{}'); for(const k in sp) P[k]=sp[k]; }catch(_){}
   try{ const sy=JSON.parse(localStorage.getItem('wc26_pays')||'{}'); for(const k in sy) PAYS[k]=sy[k]; }catch(_){}
+  try{ const st=JSON.parse(localStorage.getItem('wc26_tickets')||'null'); if(st&&st.length) TICKETS=st; }catch(_){}
   render();
   loadSupa();
   subscribe();
@@ -751,13 +775,13 @@ let TFILTER_CAT = null; // filtre statut (onglet Tickets)
 let DASH_FILTER = null; // filtre liste tickets (Vue d'ensemble)
 
 function render(){
-  const R = WC.computeAll(RAW, P, PAYS);
+  const R = WC.computeAll(SRC(), P, PAYS);
   renderHeader(R);
   if(TAB==='dash') renderDash(R);
   else if(TAB==='joueurs') renderJoueurs(R);
   else if(TAB==='tickets') renderTickets(R);
   else if(TAB==='alertes') renderAlertes(R);
-  if(OVERLAY_ID) drawOverlay();
+  if(OVERLAY_ID && OVERLAY_ID!=='__form__') drawOverlay();
 }
 
 function hs(n,l,c){ return `<div class="h-stat"><span class="h-stat-n" style="color:${c||'var(--rose)'}">${n}</span><span class="h-stat-l">${l}</span></div>`; }
@@ -778,7 +802,7 @@ function cat(r){ if(r.statut==='gagne') return 'gagne'; if(r.statut==='perdu') r
 
 /* ---- bandeau pays (filtre + bascule éliminé) ---- */
 function paysBanner(){
-  const m={}; T.forEach(t=>t.selections.forEach(s=>{ const k=pKeyN(s.pays); (m[k]=m[k]||{nom:s.pays,n:0}).n++; }));
+  const m={}; TICKETS.forEach(t=>t.selections.forEach(s=>{ const k=pKeyN(s.pays); (m[k]=m[k]||{nom:s.pays,n:0}).n++; }));
   const arr=Object.entries(m).map(([k,v])=>({k,...v})).sort((a,b)=>b.n-a.n);
   let h=`<div class="pays-bar">`;
   arr.forEach(p=>{ const elim=paysStatus(p.nom)==='elimine'; const act=FILTER_PAYS===p.k;
@@ -820,11 +844,11 @@ function renderDash(R){
   const proches=R.tickets.filter(r=>r.provG===r.X-1 && r.statut!=='perdu').sort((a,b)=>b.gainProjete-a.gainProjete);
   html += `<div class="ana-card"><div class="ana-h">À 1 joueur d'un palier <span class="ana-sub">${proches.length} · clic = ouvrir</span></div>`;
   if(!proches.length) html+=`<div class="empty">—</div>`;
-  proches.slice(0,6).forEach(r=>{ const tk=T.find(x=>x.id===r.id);
+  proches.slice(0,6).forEach(r=>{ const tk=TICKETS.find(x=>x.id===r.id);
     html+=`<div class="prow" onclick="openOverlay('${r.id}')"><span class="prow-n">${tk.nom}</span><span class="prow-f">${r.provG+1}/${r.X}</span><span class="prow-g">+${fmt(r.paliers[0].gainProjete)}</span></div>`; });
   html += `</div>`;
   // top pays
-  const pm={}; T.forEach(t=>t.selections.forEach(s=>{ const k=pKeyN(s.pays); (pm[k]=pm[k]||{nom:s.pays,n:0}).n++; }));
+  const pm={}; TICKETS.forEach(t=>t.selections.forEach(s=>{ const k=pKeyN(s.pays); (pm[k]=pm[k]||{nom:s.pays,n:0}).n++; }));
   const pa=Object.values(pm).sort((a,b)=>b.n-a.n).slice(0,7); const pmax=pa[0]?pa[0].n:1;
   html += `<div class="ana-card"><div class="ana-h">Top pays <span class="ana-sub">clic = filtre tickets</span></div>`;
   pa.forEach(p=>{ html+=`<div class="mbar" style="cursor:pointer" onclick="goPaysTickets('${pKeyN(p.nom)}')"><span class="mbar-l" style="width:78px">${p.nom}</span><div class="mbar-tk"><div class="mbar-f" style="width:${p.n/pmax*100}%;background:var(--c-tete)"></div></div><span class="mbar-v">${p.n}</span></div>`; });
@@ -848,7 +872,7 @@ function donutSVG(cats,legend){
 
 /* ligne ticket segmentée (dash + réutilisable) */
 function tkLine(r){
-  const tk=T.find(x=>x.id===r.id);
+  const tk=TICKETS.find(x=>x.id===r.id);
   const badge = r.statut==='gagne'?'win':r.statut==='perdu'?'idle':r.virtuel?'win':cat(r)==='proche'?'close':'idle';
   const blab  = r.statut==='gagne'?'gagné':r.statut==='perdu'?'perdu':r.virtuel?'virt.':cat(r)==='proche'?'proche':'en cours';
   return `<div class="tk-line" onclick="openOverlay('${r.id}')">
@@ -861,10 +885,10 @@ function tkLine(r){
 
 /* ---- JOUEURS ---- */
 function renderJoueurs(R){
-  let html = `<div class="label">Pays — clic = filtrer · ✕ = bascule en course / éliminé</div>${paysBanner()}`;
+  let html = `<div class="add-row"><button class="add-tk-btn" onclick="openTicketForm()">+ Ajouter un ticket</button></div><div class="label">Pays — clic = filtrer · ✕ = bascule en course / éliminé</div>${paysBanner()}`;
   html += `<div class="filters"><input id="pfilter" placeholder="Filtrer un joueur…" value="${FILTER}" oninput="FILTER=this.value;render()"></div>`;
-  const cnt={}; T.forEach(t=>t.selections.forEach(s=>{ const k=eKey(s.joueur,s.pays,s.type); cnt[k]=(cnt[k]||0)+1; }));
-  const players=Object.keys(RAW.players).map(k=>({k,...RAW.players[k]})).sort((a,b)=>(cnt[b.k]||0)-(cnt[a.k]||0));
+  const cnt={}; TICKETS.forEach(t=>t.selections.forEach(s=>{ const k=eKey(s.joueur,s.pays,s.type); cnt[k]=(cnt[k]||0)+1; }));
+  const pcat=derivePlayers(); const players=Object.keys(pcat).map(k=>pcat[k]).sort((a,b)=>(cnt[b.k]||0)-(cnt[a.k]||0));
   const expo=R.exposition;
   html += `<div class="pgrid">`;
   players.forEach(pl=>{
@@ -903,7 +927,7 @@ function renderTickets(R){
   html += `<div class="tgrid">`;
   R.tickets.forEach(r=>{
     const c=cat(r); if(TFILTER_CAT && c!==TFILTER_CAT) return;
-    const tk=T.find(x=>x.id===r.id);
+    const tk=TICKETS.find(x=>x.id===r.id);
     if(FILTER_PAYS && !tk.selections.some(s=>pKeyN(s.pays)===FILTER_PAYS)) return;
     const badge=r.statut==='gagne'?'win':r.statut==='perdu'?'idle':r.virtuel?'win':c==='proche'?'close':'idle';
     const blab=r.statut==='gagne'?'gagné':r.statut==='perdu'?'perdu':r.virtuel?'virt. gagnant':c==='proche'?'proche':'en cours';
@@ -927,9 +951,9 @@ function renderAlertes(R){
   const virt=R.tickets.filter(r=>r.virtuel);
   const proche=R.tickets.filter(r=>r.provG===r.X-1 && r.statut!=='perdu');
   if(virt.length){ html+=`<div class="label">Virtuellement gagnants (gelé maintenant)</div>`;
-    virt.forEach(r=>{ const tk=T.find(x=>x.id===r.id); html+=`<div class="alert win" onclick="openOverlay('${r.id}')"><strong>${tk.nom}</strong> ${tk.systeme} — <span class="ok">${r.provG}/${r.X}</span> · projeté <span class="gain-tag">${fmt(r.gainProjete)}</span></div>`; }); }
+    virt.forEach(r=>{ const tk=TICKETS.find(x=>x.id===r.id); html+=`<div class="alert win" onclick="openOverlay('${r.id}')"><strong>${tk.nom}</strong> ${tk.systeme} — <span class="ok">${r.provG}/${r.X}</span> · projeté <span class="gain-tag">${fmt(r.gainProjete)}</span></div>`; }); }
   if(proche.length){ html+=`<div class="label">À une sélection du palier</div>`;
-    proche.forEach(r=>{ const tk=T.find(x=>x.id===r.id); html+=`<div class="alert close" onclick="openOverlay('${r.id}')"><strong>${tk.nom}</strong> ${tk.systeme} — il manque <span class="hi">1</span> pour ${r.X}/${r.N} · +${fmt(r.paliers[0].gainProjete)}</div>`; }); }
+    proche.forEach(r=>{ const tk=TICKETS.find(x=>x.id===r.id); html+=`<div class="alert close" onclick="openOverlay('${r.id}')"><strong>${tk.nom}</strong> ${tk.systeme} — il manque <span class="hi">1</span> pour ${r.X}/${r.N} · +${fmt(r.paliers[0].gainProjete)}</div>`; }); }
   if(!html) html=`<div class="empty">Rien à signaler</div>`;
   document.getElementById('alertes').innerHTML = html;
 }
@@ -940,7 +964,7 @@ function closeOverlay(e){ if(e&&e.target&&!e.target.classList.contains('tcard-ov
 function filterK(k){ SHEET_K=k; drawOverlay(); }
 function deployedCombos(tk){ const [X,N]=tk.systeme.split('/').map(Number); const out=[]; for(let k=X;k<=N;k++){ WC.kcombos(tk.selections.length,k).forEach(idx=>out.push({k,sels:idx.map(i=>tk.selections[i])})); } return out; }
 function drawOverlay(){
-  const tk=T.find(x=>x.id===OVERLAY_ID); if(!tk) return;
+  const tk=TICKETS.find(x=>x.id===OVERLAY_ID); if(!tk) return;
   const r=WC.computeTicket(tk,P,PAYS,MISE,null);
   const combos=deployedCombos(tk).map(c=>{ let prod=1,dead=false,allG=true,allPg=true; c.sels.forEach(s=>{ const o=outcomeSel(s); const neg=negOf(s.joueur,s.pays,s.type); const ce=Math.max(s.cote/neg,1); prod*=ce; if(o==='perdu')dead=true; if(o!=='gagne')allG=false; if(!(o==='gagne'||o==='tete'))allPg=false; });
     return {k:c.k, sels:c.sels, gain:prod*MISE, state: dead?'dead':(allG?'finalized':(allPg?'projete':'live'))}; });
@@ -963,6 +987,7 @@ function drawOverlay(){
   document.getElementById('tcardOverlay').innerHTML = `<div class="tcard-sheet">
     <div class="tcard-sheet-head"><span class="tcard-nom" style="font-size:15px">${tk.nom}</span><span class="tcard-sys">${tk.systeme}</span>
       <span class="tcard-badge ${r.virtuel||r.statut==='gagne'?'win':r.statut==='perdu'?'idle':'idle'}">${r.statut==='gagne'?'gagné':r.statut==='perdu'?'perdu':r.virtuel?'virt. gagnant':'en cours'}</span>
+      <button class="mini-sbtn" style="margin-left:auto" onclick="deleteTicket('${tk.id}')">Supprimer</button>
       <button class="tcard-sheet-close" onclick="closeOverlay()">✕</button></div>
     <div class="tcard-sheet-body">
       <div class="tcard-sheet-col">
@@ -988,6 +1013,61 @@ function goTabByName(name,id){ TAB=id; document.querySelectorAll('nav button').f
 function goPlayer(n){ FILTER=cap(n); goTabByName('Joueurs','joueurs'); }
 function cap(s){ return (s||'').split(' ').map(w=>w?w.charAt(0).toUpperCase()+w.slice(1):w).join(' '); }
 function esc(s){ return String(s).replace(/'/g,"\\'"); }
+
+/* ===== Option B : catalogue derive + formulaire ticket ===== */
+function derivePlayers(){ var m={}; TICKETS.forEach(function(t){ (t.selections||[]).forEach(function(s){ var k=eKey(s.joueur,s.pays,s.type); if(!m[k]) m[k]={k:k,joueur:s.joueur,pays:s.pays,type:s.type,cote_ref:(s.cote!=null?s.cote:((RAW.players[k]&&RAW.players[k].cote_ref)||1))}; }); }); return m; }
+var FORM_SELS=[];
+function fval(id){ var e=document.getElementById(id); return e?e.value:''; }
+function openTicketForm(){ OVERLAY_ID='__form__'; FORM_SELS=[{joueur:'',pays:'',type:'buteur',cote:'',neg:1}]; document.body.style.overflow='hidden'; drawForm(); document.getElementById('tcardOverlay').classList.add('open'); }
+function formRead(){ FORM_SELS.forEach(function(s,i){ s.joueur=fval('f_j'+i); s.pays=fval('f_p'+i); s.type=fval('f_t'+i); s.cote=fval('f_c'+i); s.neg=fval('f_n'+i)||1; }); }
+function formAddSel(){ formRead(); FORM_SELS.push({joueur:'',pays:'',type:'buteur',cote:'',neg:1}); drawForm(); }
+function formDelSel(i){ formRead(); FORM_SELS.splice(i,1); if(!FORM_SELS.length)FORM_SELS.push({joueur:'',pays:'',type:'buteur',cote:'',neg:1}); drawForm(); }
+function drawForm(){
+  var cat=derivePlayers(), names={}, paysSet={};
+  Object.keys(cat).forEach(function(k){ names[cat[k].joueur]=1; paysSet[cat[k].pays]=1; });
+  var dlJ='<datalist id="dlJ">'+Object.keys(names).sort().map(function(n){return '<option value="'+n.replace(/"/g,'')+'">';}).join('')+'</datalist>';
+  var dlP='<datalist id="dlP">'+Object.keys(paysSet).sort().map(function(n){return '<option value="'+n.replace(/"/g,'')+'">';}).join('')+'</datalist>';
+  var rows=FORM_SELS.map(function(s,i){ return '<div class="form-sel">'+
+    '<input id="f_j'+i+'" list="dlJ" placeholder="Joueur" value="'+(s.joueur||'').replace(/"/g,'&quot;')+'">'+
+    '<input id="f_p'+i+'" list="dlP" placeholder="Pays" value="'+(s.pays||'').replace(/"/g,'&quot;')+'">'+
+    '<select id="f_t'+i+'"><option value="buteur"'+(s.type==='buteur'?' selected':'')+'>buteur</option><option value="passeur"'+(s.type==='passeur'?' selected':'')+'>passeur</option></select>'+
+    '<input id="f_c'+i+'" type="number" step="0.01" placeholder="cote" value="'+(s.cote||'')+'" style="width:62px">'+
+    '<input id="f_n'+i+'" type="number" min="1" value="'+(s.neg||1)+'" style="width:44px" title="egalite">'+
+    '<button class="mini-sbtn" onclick="formDelSel('+i+')">\u2715</button></div>'; }).join('');
+  var N=FORM_SELS.length;
+  document.getElementById('tcardOverlay').innerHTML='<div class="tcard-sheet form-sheet">'+
+    '<div class="tcard-sheet-head"><span class="tcard-nom" style="font-size:15px">Nouveau ticket</span>'+
+    '<button class="tcard-sheet-close" onclick="closeOverlay()">\u2715</button></div>'+
+    '<div class="form-body">'+dlJ+dlP+
+    '<div class="form-line"><input id="f_nom" placeholder="Nom (ex 49k)" value="'+fval('f_nom').replace(/"/g,'&quot;')+'">'+
+    '<input id="f_ref" placeholder="Ref (option)" value="'+fval('f_ref').replace(/"/g,'&quot;')+'">'+
+    '<label class="form-x">Systeme&nbsp;<input id="f_x" type="number" min="1" max="'+N+'" value="'+(fval('f_x')||N)+'" style="width:50px"> / '+N+'</label></div>'+
+    '<div class="form-sec">Selections ('+N+')</div>'+rows+
+    '<button class="add-tk-btn" style="margin-top:8px" onclick="formAddSel()">+ selection</button>'+
+    '<div class="form-actions"><button class="mini-sbtn" onclick="closeOverlay()">Annuler</button><button class="add-tk-btn" onclick="saveTicketForm()">Enregistrer</button></div>'+
+    '</div></div>';
+}
+function saveTicketForm(){
+  formRead();
+  var nom=fval('f_nom').trim(), X=parseInt(fval('f_x'),10), N=FORM_SELS.length;
+  if(!nom){ alert('Nom requis'); return; }
+  if(!(X>=1&&X<=N)){ alert('Systeme invalide : il faut 1 <= X <= '+N); return; }
+  var cat=derivePlayers(), nameMap={}; Object.keys(cat).forEach(function(k){ nameMap[WC.norm(cat[k].joueur)]=cat[k].joueur; });
+  var sels=[];
+  for(var i=0;i<FORM_SELS.length;i++){ var s=FORM_SELS[i];
+    if(!s.joueur||!s.pays||!s.cote){ alert('Selection '+(i+1)+' : joueur, pays et cote requis'); return; }
+    var j=s.joueur.trim(), canon=nameMap[WC.norm(j)]; if(canon)j=canon;
+    sels.push({joueur:j,pays:s.pays.trim(),type:s.type,cote:+s.cote,n_egalite:Math.max(1,parseInt(s.neg,10)||1)});
+  }
+  saveTicket({id:String(Date.now()),nom:nom,systeme:X+'/'+N,ref:(fval('f_ref').trim()||null),selections:sels});
+}
+async function saveTicket(tk){
+  var ix=TICKETS.findIndex(function(x){return x.id===tk.id;}); if(ix>=0)TICKETS[ix]=tk; else TICKETS.push(tk);
+  localStorage.setItem('wc26_tickets', JSON.stringify(TICKETS)); closeOverlay(); render();
+  try{ await fetch(SUPA_URL+'/rest/v1/tickets?on_conflict=id',{method:'POST',headers:Object.assign({},HJ,{'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify({id:tk.id,nom:tk.nom,systeme:tk.systeme,ref:tk.ref,selections:tk.selections,updated_at:new Date().toISOString()})}); syncDot(true);}catch(e){ syncDot(false); }
+}
+async function deleteTicket(id){ if(!confirm('Supprimer ce ticket ?'))return; TICKETS=TICKETS.filter(function(x){return x.id!==id;}); localStorage.setItem('wc26_tickets',JSON.stringify(TICKETS)); closeOverlay(); render();
+  try{ await fetch(SUPA_URL+'/rest/v1/tickets?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:HJ}); }catch(e){} }
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeOverlay(); });
 init();
