@@ -449,6 +449,13 @@ var WC = (function () {
     return { key: k, status: status, neg: neg, pays: paysSt, outcome: outcome, prov: prov, cote: cote, coteEff: coteEff };
   }
 
+  /* polynomes symetriques elementaires e[0..m] des valeurs vals */
+  function esp(vals) {
+    var e = [1], i, j;
+    for (i = 0; i < vals.length; i++) { e[i + 1] = 0; for (j = i + 1; j >= 1; j--) { e[j] = e[j] + vals[i] * e[j - 1]; } }
+    return e;
+  }
+
   /* sous-ensembles de taille k des indices 0..n-1 (ES5, iteratif) */
   function kcombos(n, k) {
     var res = [], idx = [], i;
@@ -519,12 +526,30 @@ var WC = (function () {
     }
 
     var statut = (G >= X) ? "gagne" : ((G + P < X) ? "perdu" : "en_cours");
+
+    /* prochain plancher : gain si la prochaine selection la plus probable (plus petite cote) gagne */
+    var winVals = [], q;
+    for (q = 0; q < st.length; q++) { if (st[q].prov === "gagnante" && st[q].coteEff != null) winVals.push(st[q].coteEff); }
+    var ee = esp(winVals), S = 0, jj;
+    for (jj = X - 1; jj <= N - 1; jj++) { S += (ee[jj] || 0); }
+    var nextI = -1, nextCote = Infinity, incr;
+    for (q = 0; q < st.length; q++) {
+      if (st[q].outcome === "potentielle" && st[q].prov === "perdante" && st[q].coteEff != null) {
+        incr = st[q].coteEff * mise * S;
+        if (expo) { var ek = st[q].key; var e2 = expo[ek] || (expo[ek] = { acquis: 0, potentiel: 0, plancher: 0 }); if (e2.plancher == null) e2.plancher = 0; e2.plancher += incr; }
+        if (st[q].coteEff < nextCote) { nextCote = st[q].coteEff; nextI = q; }
+      }
+    }
+    var gainProchain = gainProjete + (nextI >= 0 ? nextCote * mise * S : 0);
+    var prochainJoueur = nextI >= 0 ? sels[nextI].joueur : null;
+
     return {
       id: tk.id, nom: tk.nom, X: X, N: N,
       G: G, P: P, D: D, provG: provG,
       statut: statut,                 /* definitif: en_cours | gagne | perdu */
       virtuel: (provG >= X),          /* provisoire: vrai si gele maintenant -> palier atteint */
       gainAcquis: gainAcquis, gainPotentiel: gainPotentiel, gainProjete: gainProjete,
+      gainProchain: gainProchain, prochainJoueur: prochainJoueur,
       paliers: paliers, selStates: st
     };
   }
@@ -532,17 +557,17 @@ var WC = (function () {
   function computeAll(source, players, pays) {
     var mise = (source.meta && source.meta.mise != null) ? source.meta.mise : 0.10;
     var expo = {}, tickets = [], i;
-    var totAcq = 0, totPot = 0, totProj = 0, nGagne = 0, nPerdu = 0, nEnCours = 0, nVirtuel = 0;
+    var totAcq = 0, totPot = 0, totProj = 0, totProch = 0, nGagne = 0, nPerdu = 0, nEnCours = 0, nVirtuel = 0;
     for (i = 0; i < source.tickets.length; i++) {
       var r = computeTicket(source.tickets[i], players, pays, mise, expo);
       tickets.push(r);
-      totAcq += r.gainAcquis; totPot += r.gainPotentiel; totProj += r.gainProjete;
+      totAcq += r.gainAcquis; totPot += r.gainPotentiel; totProj += r.gainProjete; totProch += r.gainProchain;
       if (r.statut === "gagne") nGagne++; else if (r.statut === "perdu") nPerdu++; else nEnCours++;
       if (r.virtuel) nVirtuel++;
     }
     return {
       tickets: tickets, exposition: expo,
-      totaux: { gainAcquis: totAcq, gainPotentiel: totPot, gainProjete: totProj,
+      totaux: { gainAcquis: totAcq, gainPotentiel: totPot, gainProjete: totProj, gainProchain: totProch,
                 nGagne: nGagne, nPerdu: nPerdu, nEnCours: nEnCours, nVirtuel: nVirtuel }
     };
   }
@@ -775,6 +800,7 @@ function renderDash(R){
   // 3 mesures
   html += `<div class="gains-row">
     <div class="gain-kpi"><div class="gain-n" style="color:var(--c-gagne-light)">${fmt(T0.gainProjete)}</div><div class="gain-l">Projeté · gelé maintenant</div></div>
+    <div class="gain-kpi"><div class="gain-n" style="color:var(--c-tete)">${fmt(T0.gainProchain)}</div><div class="gain-l">Prochain plancher · 1 flip probable</div></div>
     <div class="gain-kpi"><div class="gain-n" style="color:var(--c-gagne-light)">${fmt(T0.gainAcquis)}</div><div class="gain-l">Acquis · définitif</div></div>
     <div class="gain-kpi"><div class="gain-n" style="color:var(--muted2)">${fmt(T0.gainPotentiel)}</div><div class="gain-l">Plafond · max possible</div></div>
   </div>`;
@@ -789,8 +815,9 @@ function renderDash(R){
   const bar=(l,v,c)=>`<div class="mbar"><span class="mbar-l">${l}</span><div class="mbar-tk"><div class="mbar-f" style="width:${Math.max(2,v/mx*100)}%;background:${c}"></div></div><span class="mbar-v" style="color:${c}">${fmt(v)}</span></div>`;
   html += `<div class="ana-card"><div class="ana-h">Montants €</div>
     ${bar('Projeté',T0.gainProjete,'var(--c-gagne-light)')}
+    ${bar('Prochain',T0.gainProchain,'var(--c-tete)')}
     ${bar('Acquis',T0.gainAcquis,'var(--c-gagne-light)')}
-    ${bar('Plafond',T0.gainPotentiel,'var(--c-tete)')}</div>`;
+    ${bar('Plafond',T0.gainPotentiel,'#7a7a72')}</div>`;
   // proches (à 1 joueur d'un palier)
   const proches=R.tickets.filter(r=>r.provG===r.X-1 && r.statut!=='perdu').sort((a,b)=>b.gainProjete-a.gainProjete);
   html += `<div class="ana-card"><div class="ana-h">À 1 joueur d'un palier <span class="ana-sub">${proches.length} · clic = ouvrir</span></div>`;
@@ -831,7 +858,7 @@ function tkLine(r){
     <div class="tk-seg">${segGauge(tk,r.X)}</div>
     <span class="tk-frac">${r.provG}/${r.X}</span>
     <span class="tcard-badge ${badge}">${blab}</span>
-    <span class="tk-gain" style="color:var(--c-gagne-light)">${fmt(r.gainProjete)}</span></div>`;
+    <span class="tk-gain" style="color:var(--c-gagne-light)">${fmt(r.gainProjete)} <span style="color:var(--c-tete);font-size:10px;font-weight:600">▸${fmt(r.gainProchain)}</span></span></div>`;
 }
 
 /* ---- JOUEURS ---- */
@@ -851,7 +878,7 @@ function renderJoueurs(R){
     html += `<div class="pcard ${frameCls(pl.pays)}"><div class="pcard-top">
         <div class="pcard-name" style="${nameStyle(o)}">${cap(a[0])}</div>
         <div class="pcard-count ${cnt[pl.k]>=4?'hi':''}">${cnt[pl.k]||0}×</div></div>
-      <div class="pcard-meta"><span>${pl.pays}${paysStatus(pl.pays)==='elimine'?' ✕':''}</span><span class="tbadge ${pl.type}">${pl.type}</span><span class="cote-badge">×${pl.cote_ref}</span>${ex?`<span class="cote-badge port">porte ${fmt(ex.potentiel)}</span>`:''}</div>
+      <div class="pcard-meta"><span>${pl.pays}${paysStatus(pl.pays)==='elimine'?' ✕':''}</span><span class="tbadge ${pl.type}">${pl.type}</span><span class="cote-badge">×${pl.cote_ref}</span>${ex?`<span class="cote-badge port">porte ${fmt(ex.potentiel)}</span>`:''}${ex&&ex.plancher?`<span class="cote-badge" style="color:var(--c-tete)">declenche ${fmt(ex.plancher)}</span>`:''}</div>
       <div class="pcard-btns">
         ${STATUSES.map(s=>`<button class="sbtn ${cur.status===s?'on-'+s:''}" onclick="setStatus('${esc(pl.joueur)}','${esc(pl.pays)}','${pl.type}','${s}')">${SLABELS[s]}</button>`).join('')}
       </div>
@@ -887,7 +914,7 @@ function renderTickets(R){
         <span class="tcard-nom">${tk.nom}</span><span class="tcard-sys">${tk.systeme}</span>
         <span class="tcard-frac">${r.provG}/${r.X}</span>
         <span class="tcard-badge ${badge}">${blab}</span>
-        <span class="tcard-gain-head" style="color:var(--c-gagne-light)">${fmt(r.gainProjete)}</span>
+        <span class="tcard-gain-head" style="color:var(--c-gagne-light)">${fmt(r.gainProjete)} <span style="color:var(--c-tete);font-size:10px">▸${fmt(r.gainProchain)}</span></span>
         <span class="tcard-expand-icon">▸</span></div>
       <div class="tcard-seg">${segGauge(tk,r.X)}</div>
     </div>`;
@@ -924,6 +951,7 @@ function drawOverlay(){
     return `<div class="sheet-sel"><span class="seg" style="width:9px;height:9px;flex:none;border-radius:50%;background:${SEG_COL[o]}"></span>
       <span class="sheet-sel-name" style="${nameStyle(o)}">${cap(s.joueur)}</span>
       <span class="sel-pays">${s.pays}${paysStatus(s.pays)==='elimine'?' ✕':''}</span>
+      <span class="tbadge ${s.type}">${s.type}</span>
       <span class="sel-cote">×${s.cote}${neg>1?'÷'+neg:''}</span>
       <span class="sel-actions">${STATUSES.map(st=>`<button class="mini-sbtn ${cur===st?'on-'+st:''}" onclick="setStatus('${esc(s.joueur)}','${esc(s.pays)}','${s.type}','${st}')">${SLABELS[st]}</button>`).join('')}
       <button class="mini-sbtn ${paysStatus(s.pays)==='elimine'?'on-depasse':''}" title="pays en course / éliminé" onclick="togglePays('${esc(s.pays)}')">⚑</button></span></div>`; }).join('');
@@ -942,6 +970,7 @@ function drawOverlay(){
       <div class="tcard-sheet-col">
         <div class="sheet-kpi-row">
           <div class="sheet-kpi"><div class="sheet-kpi-n green">${fmt(r.gainProjete)}</div><div class="sheet-kpi-l">projeté gelé</div></div>
+          <div class="sheet-kpi"><div class="sheet-kpi-n" style="color:var(--c-tete)">${fmt(r.gainProchain)}</div><div class="sheet-kpi-l">prochain${r.prochainJoueur?' · '+cap(r.prochainJoueur):''}</div></div>
           <div class="sheet-kpi"><div class="sheet-kpi-n green">${fmt(r.gainAcquis)}</div><div class="sheet-kpi-l">acquis</div></div>
           <div class="sheet-kpi"><div class="sheet-kpi-n muted">${fmt(r.gainPotentiel)}</div><div class="sheet-kpi-l">plafond</div></div>
         </div>
