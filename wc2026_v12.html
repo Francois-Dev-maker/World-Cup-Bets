@@ -620,7 +620,7 @@ const STATUSES = ['attente','tete','depasse'];
 
 function eKey(j,p,t){ return WC.norm(j)+'|'+WC.norm(p)+'|'+WC.norm(t); }
 function pKeyN(p){ return WC.norm(p); }
-function fmt(v){ if(v==null) return '—'; if(!v) return '0€'; return Math.round(v).toLocaleString('fr-FR')+'€'; }
+function fmt(v){ if(v==null) return '—'; if(!v) return '0€'; if(Math.abs(v)<1) return v.toFixed(2).replace('.',',')+'€'; return Math.round(v).toLocaleString('fr-FR')+'€'; }
 
 /* ---- accès statut / n_egalite (avec repli nom|type) ---- */
 function getP(j,p,t){

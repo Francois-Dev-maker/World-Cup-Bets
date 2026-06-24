@@ -311,7 +311,7 @@ function el(id){ return document.getElementById(id); }
 function nrm(s){ return WC.norm(s); }
 function eKey(j,p,t){ return nrm(j)+"|"+nrm(p)+"|"+nrm(t); }
 function pKeyN(p){ return nrm(p); }
-function fmt(v){ if(v==null) return "-"; if(!v) return "0\u20ac"; return Math.round(v).toLocaleString("fr-FR")+"\u20ac"; }
+function fmt(v){ if(v==null) return "-"; if(!v) return "0\u20ac"; if(Math.abs(v)<1) return v.toFixed(2).replace(".",",")+"\u20ac"; return Math.round(v).toLocaleString("fr-FR")+"\u20ac"; }
 function cap(s){ s=s||""; var a=s.split(" "),i,o=[]; for(i=0;i<a.length;i++){ o.push(a[i]?a[i].charAt(0).toUpperCase()+a[i].slice(1):a[i]); } return o.join(" "); }
 function esc(s){ return String(s).replace(/'/g,"\\'"); }
 var PAYS3={"france":"FRA","espagne":"ESP","allemagne":"ALL","portugal":"POR","bresil":"BRE","argentine":"ARG","angleterre":"ANG","ecosse":"SCO","belgique":"BEL","pays bas":"PB","maroc":"MAR","senegal":"SEN","usa":"USA","mexique":"MEX","canada":"CAN","japon":"JAP","australie":"AUS","suisse":"SUI","croatie":"CRO","colombie":"COL","equateur":"EQU","uruguay":"URU","ghana":"GHA","egypte":"EGY","algerie":"ALG","tunisie":"TUN","iran":"IRN","arabie saoudite":"SAU","qatar":"QAT","curacao":"CUW","haiti":"HAI","panama":"PAN","suede":"SUE","autriche":"AUT","turquie":"TUR","tchequie":"TCH","bosnie":"BOS","jordanie":"JOR","irak":"IRK","cap vert":"CPV","cote d'ivoire":"CIV","cote ivoire":"CIV","rd congo":"COD","ouzbekistan":"OUZ","coree du sud":"COR","coree":"COR","norvege":"NOR","afrique du sud":"RSA","paraguay":"PAR"};
