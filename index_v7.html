@@ -117,11 +117,43 @@ main{padding:10px;}
 /* filtre texte joueurs */
 .jfilter{width:100%;background:#161618;border:1px solid #303036;color:#e6e6e6;border-radius:9px;padding:10px 12px;font-size:14px;margin:8px 0;box-sizing:border-box}
 .jfilter::placeholder{color:#6a6a72}
+
+.tc-max{color:var(--c-gagne-light);font-size:11px;font-weight:700;margin-left:6px}
+
+/* --- onglet Reseau (mobile) --- */
+.mnet-bar{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.mnet-count{font-size:11px;color:var(--muted);margin-left:auto}
+.nseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.nseg button{background:transparent;color:var(--muted);border:none;padding:5px 9px;font-size:12px;font-weight:600}
+.nseg button.on{background:#23232a;color:#fff}
+.mnet-graph{position:relative;height:46vh;background:#0c0c0e;overflow:hidden;touch-action:none}
+#mnetSvg{width:100%;height:100%;display:block}
+.nedge{stroke:#d4d4dc;stroke-opacity:0}
+.nedge.nlit{stroke-opacity:.55;stroke-width:1.6}
+.nnode .ncirc{stroke:#0c0c0e;stroke-width:1.5}
+.nnode text{font-size:10px;fill:#e6e6e6;opacity:.85;paint-order:stroke;stroke:#0c0c0e;stroke-width:3px}
+.nnode.ntete .ncirc{stroke:var(--c-tete);stroke-width:2.5}
+.nnode.nsel .ncirc{stroke:var(--c-gagne-light);stroke-width:3.5}
+.nnode.nsel text,.nnode.nanchor text{opacity:1;font-weight:700;fill:#fff}
+.nnode.ndim{opacity:.1}
+.nnode.nsat{opacity:.42}
+.nnode.nspotdim{opacity:.08}
+.nnode.nspot{opacity:1}
+.nnode.nspot text{opacity:1;font-weight:700;fill:#fff}
+.mnet-list{padding:6px 9px}
+.ntk{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:#161619}
+.ntk.spoton{border-color:var(--c-gagne-light);background:#19211d}
+.ntk-h{display:flex;align-items:center;gap:8px;font-weight:700}
+.ntk-max{color:var(--c-gagne-light);font-size:11px;font-weight:700}
+.ntk-sys{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600}
+.ntk-sels{margin-top:4px;font-size:11px;color:var(--muted);line-height:1.5}
+.ntk-sels b{color:var(--c-gagne-light);font-weight:700}
+.ntk-sels .pp{color:#cdb98a}
 </style></head>
 <body>
 <header><div class="htop"><div class="logo">WC 2026</div><span id="syncDot">○</span></div><div class="kpis" id="kpis"></div></header>
 <main><div id="view"></div></main>
-<div class="tabbar"><button class="on" data-t="tickets" onclick="goTab('tickets')">Tickets</button><button data-t="joueurs" onclick="goTab('joueurs')">Joueurs</button></div>
+<div class="tabbar"><button class="on" data-t="tickets" onclick="goTab('tickets')">Tickets</button><button data-t="reseau" onclick="goTab('reseau')">Réseau</button><button data-t="joueurs" onclick="goTab('joueurs')">Joueurs</button></div>
 <div class="scrim" id="scrim" onclick="closeSheet()"></div><div class="sheet" id="sheet"></div>
 <script>
 /* WC2026 - moteur de calcul - ES5 pur, ASCII only (compatible Safari iOS et Chrome) */
@@ -259,6 +291,7 @@ var WC = (function () {
       statut: statut,                 /* definitif: en_cours | gagne | perdu */
       virtuel: (provG >= X),          /* provisoire: vrai si gele maintenant -> palier atteint */
       gainAcquis: gainAcquis, gainPotentiel: gainPotentiel, gainProjete: gainProjete,
+      maxEnCours: gainAcquis + gainPotentiel,
       gainProchain: gainProchain, prochainJoueur: prochainJoueur,
       paliers: paliers, selStates: st
     };
@@ -267,17 +300,17 @@ var WC = (function () {
   function computeAll(source, players, pays) {
     var mise = (source.meta && source.meta.mise != null) ? source.meta.mise : 0.10;
     var expo = {}, tickets = [], i;
-    var totAcq = 0, totPot = 0, totProj = 0, totProch = 0, nGagne = 0, nPerdu = 0, nEnCours = 0, nVirtuel = 0;
+    var totAcq = 0, totPot = 0, totProj = 0, totProch = 0, totMax = 0, nGagne = 0, nPerdu = 0, nEnCours = 0, nVirtuel = 0;
     for (i = 0; i < source.tickets.length; i++) {
       var r = computeTicket(source.tickets[i], players, pays, mise, expo);
       tickets.push(r);
-      totAcq += r.gainAcquis; totPot += r.gainPotentiel; totProj += r.gainProjete; totProch += r.gainProchain;
+      totAcq += r.gainAcquis; totPot += r.gainPotentiel; totProj += r.gainProjete; totProch += r.gainProchain; totMax += r.maxEnCours;
       if (r.statut === "gagne") nGagne++; else if (r.statut === "perdu") nPerdu++; else nEnCours++;
       if (r.virtuel) nVirtuel++;
     }
     return {
       tickets: tickets, exposition: expo,
-      totaux: { gainAcquis: totAcq, gainPotentiel: totPot, gainProjete: totProj, gainProchain: totProch,
+      totaux: { gainAcquis: totAcq, gainPotentiel: totPot, gainProjete: totProj, gainProchain: totProch, maxEnCours: totMax,
                 nGagne: nGagne, nPerdu: nPerdu, nEnCours: nEnCours, nVirtuel: nVirtuel }
     };
   }
@@ -432,7 +465,7 @@ function badgeOf(r){ var c=cat(r); var cls=(r.statut==="gagne"||r.virtuel)?"b-wi
 function render(){
   var R=WC.computeAll(SRC(), P, PAYS);
   renderHeader(R);
-  if(TAB==="tickets") renderTickets(R); else renderJoueurs(R);
+  if(TAB==="tickets") renderTickets(R); else if(TAB==="reseau") renderReseauM(R); else renderJoueurs(R);
   if(SHEET_ID && SHEET_ID!=="__form__") drawSheet();
 }
 function renderHeader(R){
@@ -465,7 +498,7 @@ function renderTickets(R){
     for(var z=0;z<T.length;z++) if(T[z].id===r.id) tk=T[z];
     if(FILTER_PAYS){ var hit=false,q; for(q=0;q<tk.selections.length;q++) if(pKeyN(tk.selections[q].pays)===FILTER_PAYS) hit=true; if(!hit) continue; }
     h+="<div class='tcard "+(r.statut==="perdu"?"dead":"")+"' onclick=\"openSheet('"+r.id+"')\">"+
-       "<div class='tc-top'><span class='tc-nom'>"+tk.nom+"</span><span class='tc-sys'>"+tk.systeme+"</span>"+badgeOf(r)+"</div>"+
+       "<div class='tc-top'><span class='tc-nom'>"+tk.nom+"</span><span class='tc-max'>\u2191 "+fmt(r.maxEnCours)+"</span><span class='tc-sys'>"+tk.systeme+"</span>"+badgeOf(r)+"</div>"+
        "<div class='tc-seg'>"+segGauge(tk,r.X)+"</div>"+
        "<div class='tc-bot'><span class='tc-frac'>"+r.provG+"/"+r.X+"</span><span class='tc-gain'>"+fmt(r.gainProjete)+" <span style='color:var(--c-tete);font-size:10px;font-weight:600'>\u25b8"+fmt(r.gainProchain)+"</span></span></div>"+
        "</div>";
@@ -609,6 +642,137 @@ function deleteTicket(id){ if(!confirm("Supprimer ce ticket ?"))return; var nr=[
   xhr("DELETE","tickets?id=eq."+encodeURIComponent(id), null, null, null); }
 
 init();
+
+/* ============================================================
+   ONGLET RESEAU (mobile) - ES5/ASCII - tactile
+   ============================================================ */
+var TF = { pays:{}, joueurs:{}, type:"all" };
+var MNET = { built:false, sig:"", pos:{}, nodeEls:{}, edgeEls:[], nodes:[], adj:{}, tx:0, ty:0, sc:1, spotTid:null };
+
+function tfToggleJoueur(k){ if(!k)return; if(TF.joueurs[k])delete TF.joueurs[k]; else TF.joueurs[k]=1; render(); }
+function tfSetType(t){ TF.type=t; render(); }
+function tfClear(){ TF={pays:{},joueurs:{},type:"all"}; MNET.spotTid=null; render(); }
+function tfCount(){ var n=0,k; for(k in TF.joueurs)n++; for(k in TF.pays)n++; if(TF.type!=="all")n++; return n; }
+function tkPasseTF(tk){
+  var i,p,j;
+  if(TF.type!=="all"){ var ok=false; for(i=0;i<tk.selections.length;i++) if(tk.selections[i].type===TF.type) ok=true; if(!ok) return false; }
+  for(p in TF.pays){ var f=false; for(i=0;i<tk.selections.length;i++) if(pKeyN(tk.selections[i].pays)===p) f=true; if(!f) return false; }
+  for(j in TF.joueurs){ var g=false; for(i=0;i<tk.selections.length;i++) if(eKey(tk.selections[i].joueur,tk.selections[i].pays,tk.selections[i].type)===j) g=true; if(!g) return false; }
+  return true;
+}
+function mnetVisType(n){ return TF.type==="all"||n.type===TF.type; }
+
+function mnetBuild(){
+  var nodes={}, adj={}, edges=[], eseen={}, i, j;
+  for(i=0;i<T.length;i++){
+    var ids=[], sels=T[i].selections, s, k;
+    for(j=0;j<sels.length;j++){ s=sels[j]; k=eKey(s.joueur,s.pays,s.type); if(!nodes[k]) nodes[k]={id:k,name:s.joueur,pays:s.pays,type:s.type,freq:0}; nodes[k].freq++; if(ids.indexOf(k)<0)ids.push(k); }
+    var a,b; for(a=0;a<ids.length;a++)for(b=a+1;b<ids.length;b++){ var pr=ids[a]<ids[b]?[ids[a],ids[b]]:[ids[b],ids[a]]; eseen[pr[0]+"~"+pr[1]]=pr; }
+  }
+  for(k in eseen) edges.push(eseen[k]);
+  for(k in nodes) adj[k]=[];
+  for(i=0;i<edges.length;i++){ adj[edges[i][0]].push(edges[i][1]); adj[edges[i][1]].push(edges[i][0]); }
+  return {nodes:nodes,edges:edges,adj:adj};
+}
+function mnetLayout(ids, edges){
+  var W=1000,H=1000,k=Math.sqrt((W*H)/Math.max(1,ids.length)),pos={},rnd=1,i,it,a,b;
+  function rr(){ rnd=(rnd*9301+49297)%233280; return rnd/233280; }
+  for(i=0;i<ids.length;i++) pos[ids[i]]=[rr()*W,rr()*H];
+  for(it=0; it<240; it++){
+    var disp={}; for(i=0;i<ids.length;i++) disp[ids[i]]=[0,0];
+    for(a=0;a<ids.length;a++)for(b=a+1;b<ids.length;b++){ var ia=ids[a],ib=ids[b],dx=pos[ia][0]-pos[ib][0],dy=pos[ia][1]-pos[ib][1],d=Math.sqrt(dx*dx+dy*dy)+0.01,f=k*k/d,ux=dx/d,uy=dy/d; disp[ia][0]+=ux*f;disp[ia][1]+=uy*f;disp[ib][0]-=ux*f;disp[ib][1]-=uy*f; }
+    for(i=0;i<edges.length;i++){ var e=edges[i],dx2=pos[e[0]][0]-pos[e[1]][0],dy2=pos[e[0]][1]-pos[e[1]][1],d2=Math.sqrt(dx2*dx2+dy2*dy2)+0.01,f2=d2*d2/k*0.5,vx=dx2/d2,vy=dy2/d2; disp[e[0]][0]-=vx*f2;disp[e[0]][1]-=vy*f2;disp[e[1]][0]+=vx*f2;disp[e[1]][1]+=vy*f2; }
+    var t=Math.max(2,38*(1-it/240));
+    for(i=0;i<ids.length;i++){ var id=ids[i],ddx=disp[id][0],ddy=disp[id][1],dd=Math.sqrt(ddx*ddx+ddy*ddy)+1e-9,mm=Math.min(dd,t); pos[id][0]=Math.min(W-20,Math.max(20,pos[id][0]+ddx/dd*mm)); pos[id][1]=Math.min(H-20,Math.max(20,pos[id][1]+ddy/dd*mm)); }
+  }
+  return pos;
+}
+function mnodeBy(k){ var i; for(i=0;i<MNET.nodes.length;i++) if(MNET.nodes[i].id===k) return MNET.nodes[i]; return null; }
+function mnetSpot(ids){
+  var s={},i,n; for(i=0;i<ids.length;i++){ n=mnodeBy(ids[i]); if(n&&mnetVisType(n)) s[ids[i]]=1; }
+  var k; for(k in MNET.nodeEls){ var el2=MNET.nodeEls[k]; el2.classList.remove("nspot","nspotdim"); el2.classList.add(s[k]?"nspot":"nspotdim"); }
+  for(i=0;i<MNET.edgeEls.length;i++){ var l=MNET.edgeEls[i]; if(s[l._a]&&s[l._b]) l.classList.add("nlit"); else l.classList.remove("nlit"); }
+}
+function mnetClearSpot(){ var k,i; for(k in MNET.nodeEls) MNET.nodeEls[k].classList.remove("nspot","nspotdim"); for(i=0;i<MNET.edgeEls.length;i++) MNET.edgeEls[i].classList.remove("nlit"); }
+
+function renderReseauM(R){
+  var sig=""; var i; for(i=0;i<T.length;i++) sig+=T[i].id+","; 
+  var needBuild = !document.getElementById("mnetSvg") || MNET.sig!==sig;
+  if(needBuild){
+    MNET.sig=sig; MNET.tx=0;MNET.ty=0;MNET.sc=1; MNET.spotTid=null;
+    var D=mnetBuild(); MNET.adj=D.adj; MNET.nodes=[]; var k; for(k in D.nodes) MNET.nodes.push(D.nodes[k]);
+    var ids=[]; for(i=0;i<MNET.nodes.length;i++) ids.push(MNET.nodes[i].id);
+    MNET.pos=mnetLayout(ids,D.edges);
+    var html="<div class='mnet-bar'><div class='nseg' id='mnetSeg'></div><button class='add-tk-btn' onclick=\"tfClear()\">Reset</button><span class='mnet-count' id='mnetCount'></span></div>"+
+      "<div class='mnet-graph'><svg id='mnetSvg' viewBox='0 0 1000 1000' preserveAspectRatio='xMidYMid meet'><g id='mnetView'><g id='mnetEdges'></g><g id='mnetNodes'></g></g></svg></div>"+
+      "<div class='mnet-list' id='mnetList'></div>";
+    el("view").innerHTML=html;
+    var NS="http://www.w3.org/2000/svg";
+    var gE=document.getElementById("mnetEdges"), gN=document.getElementById("mnetNodes");
+    MNET.edgeEls=[]; MNET.nodeEls={};
+    for(i=0;i<D.edges.length;i++){ var e=D.edges[i],l=document.createElementNS(NS,"line");
+      l.setAttribute("x1",MNET.pos[e[0]][0]);l.setAttribute("y1",MNET.pos[e[0]][1]);l.setAttribute("x2",MNET.pos[e[1]][0]);l.setAttribute("y2",MNET.pos[e[1]][1]);
+      l.setAttribute("class","nedge"); l._a=e[0]; l._b=e[1]; gE.appendChild(l); MNET.edgeEls.push(l); }
+    for(i=0;i<MNET.nodes.length;i++){ (function(n){
+      var g=document.createElementNS(NS,"g"); g.setAttribute("class","nnode"); g.setAttribute("transform","translate("+MNET.pos[n.id][0]+","+MNET.pos[n.id][1]+")");
+      var r=4+Math.min(n.freq,14)*1.1;
+      var c=document.createElementNS(NS,"circle"); c.setAttribute("r",r); c.setAttribute("fill",n.type==="buteur"?"#7aa2f7":"#e0af68"); c.setAttribute("class","ncirc");
+      var tx=document.createElementNS(NS,"text"); tx.setAttribute("x",r+2); tx.setAttribute("y",3); tx.textContent=cap(n.name)+(n.type==="passeur"?" (P)":"");
+      g.appendChild(c); g.appendChild(tx);
+      g.addEventListener("click",function(ev){ ev.stopPropagation(); if(MNET._moved)return; tfToggleJoueur(n.id); });
+      gN.appendChild(g); MNET.nodeEls[n.id]=g;
+    })(MNET.nodes[i]); }
+    mnetTouch();
+  }
+  document.getElementById("mnetSeg").innerHTML =
+    "<button class='"+(TF.type==="all"?"on":"")+"' onclick=\"tfSetType('all')\">Tous</button>"+
+    "<button class='"+(TF.type==="buteur"?"on":"")+"' onclick=\"tfSetType('buteur')\">Buteurs</button>"+
+    "<button class='"+(TF.type==="passeur"?"on":"")+"' onclick=\"tfSetType('passeur')\">Passeurs</button>";
+  mnetUpdate();
+}
+function mnetUpdate(){
+  if(!document.getElementById("mnetSvg")) return;
+  var matched=[], i; for(i=0;i<T.length;i++) if(tkPasseTF(T[i])) matched.push(T[i]);
+  var keep={}, j; for(i=0;i<matched.length;i++) for(j=0;j<matched[i].selections.length;j++){ var s=matched[i].selections[j]; keep[eKey(s.joueur,s.pays,s.type)]=1; }
+  var anyF=tfCount()>0;
+  for(i=0;i<MNET.nodes.length;i++){ var n=MNET.nodes[i], g=MNET.nodeEls[n.id]; if(!g)continue;
+    g.style.display=mnetVisType(n)?"":"none";
+    if(statusOf(n.name,n.pays,n.type)==="tete") g.classList.add("ntete"); else g.classList.remove("ntete");
+    if(TF.joueurs[n.id]) g.classList.add("nsel"); else g.classList.remove("nsel");
+    g.classList.remove("ndim","nsat","nanchor","nspot","nspotdim");
+    if(anyF){ if(!keep[n.id]) g.classList.add("ndim"); else if(TF.joueurs[n.id]||TF.pays[pKeyN(n.pays)]) g.classList.add("nanchor"); else g.classList.add("nsat"); }
+  }
+  for(i=0;i<MNET.edgeEls.length;i++) MNET.edgeEls[i].classList.remove("nlit");
+  document.getElementById("mnetCount").textContent=matched.length+" / "+T.length+" tickets";
+  var h="", r;
+  for(i=0;i<matched.length;i++){ var tk=matched[i]; r=WC.computeTicket(tk,P,PAYS,MISE,null);
+    var on=MNET.spotTid===tk.id;
+    var sels=""; for(j=0;j<tk.selections.length;j++){ var ss=tk.selections[j],sel=TF.joueurs[eKey(ss.joueur,ss.pays,ss.type)]; var lab=cap(ss.joueur)+(ss.type==="passeur"?" (P)":""); sels+=(j?" + ":"")+(sel?"<b>"+lab+"</b>":"<span class='pp'>"+lab+"</span>"); }
+    h+="<div class='ntk"+(on?" spoton":"")+"' onclick=\"mnetTapTicket('"+tk.id+"')\"><div class='ntk-h'><span>"+tk.nom+"</span><span class='ntk-max'>\u2191 "+fmt(r.maxEnCours)+"</span><span class='ntk-sys'>"+tk.systeme+"</span></div><div class='ntk-sels'>"+sels+"</div></div>";
+  }
+  el("mnetList").innerHTML=h||"<div class='empty'>Aucun ticket</div>";
+}
+function mnetTapTicket(id){
+  if(MNET.spotTid===id){ MNET.spotTid=null; mnetClearSpot(); }
+  else { MNET.spotTid=id; var tk=null,i; for(i=0;i<T.length;i++) if(T[i].id===id) tk=T[i];
+    if(tk){ var ids=[],j; for(j=0;j<tk.selections.length;j++){ var s=tk.selections[j]; ids.push(eKey(s.joueur,s.pays,s.type)); } mnetSpot(ids); } }
+  mnetUpdate();
+}
+function mnetTouch(){
+  var svg=document.getElementById("mnetSvg"), view=document.getElementById("mnetView");
+  function apply(){ view.setAttribute("transform","translate("+MNET.tx+","+MNET.ty+") scale("+MNET.sc+")"); }
+  apply();
+  var lastX=0,lastY=0,pinchD=0,mode=0;
+  svg.addEventListener("touchstart",function(e){ MNET._moved=false;
+    if(e.touches.length===1){ mode=1; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; }
+    else if(e.touches.length===2){ mode=2; var dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY; pinchD=Math.sqrt(dx*dx+dy*dy); }
+  },{passive:true});
+  svg.addEventListener("touchmove",function(e){
+    if(mode===1&&e.touches.length===1){ var nx=e.touches[0].clientX,ny=e.touches[0].clientY,ddx=nx-lastX,ddy=ny-lastY; if(Math.abs(ddx)+Math.abs(ddy)>4)MNET._moved=true; MNET.tx+=ddx;MNET.ty+=ddy;lastX=nx;lastY=ny;apply(); e.preventDefault(); }
+    else if(mode===2&&e.touches.length===2){ MNET._moved=true; var dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,d=Math.sqrt(dx*dx+dy*dy); if(pinchD>0){ var f=d/pinchD,ns=Math.min(6,Math.max(0.3,MNET.sc*f)); var rc=svg.getBoundingClientRect(),cx=(e.touches[0].clientX+e.touches[1].clientX)/2-rc.left,cy=(e.touches[0].clientY+e.touches[1].clientY)/2-rc.top,kk=ns/MNET.sc; MNET.tx=cx-(cx-MNET.tx)*kk; MNET.ty=cy-(cy-MNET.ty)*kk; MNET.sc=ns; apply(); } pinchD=d; e.preventDefault(); }
+  },{passive:false});
+  svg.addEventListener("touchend",function(e){ if(e.touches.length===0) mode=0; },{passive:true});
+}
 
 </script>
 </body></html>
