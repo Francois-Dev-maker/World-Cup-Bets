@@ -427,11 +427,52 @@ main{padding:20px 24px}
 /* filtre texte joueurs */
 .jfilter{width:100%;background:#1a1a1d;border:1px solid #33333a;color:#e6e6e6;border-radius:8px;padding:9px 12px;font-size:13px;margin:8px 0 12px;box-sizing:border-box}
 .jfilter::placeholder{color:#6a6a72}
+
+/* --- onglet Reseau --- */
+.net-wrap{display:flex;height:calc(100vh - 150px);min-height:420px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.net-graph{flex:1;position:relative;overflow:hidden;background:#0c0c0e}
+#netSvg{width:100%;height:100%;display:block;cursor:grab}
+.nedge{stroke:#d4d4dc;stroke-opacity:0;pointer-events:none}
+.nedge.nlit{stroke-opacity:.55;stroke-width:1.5}
+.nnode .ncirc{cursor:pointer;stroke:#0c0c0e;stroke-width:1.5}
+.nnode text{font-size:9.5px;fill:#e6e6e6;opacity:.82;pointer-events:none;paint-order:stroke;stroke:#0c0c0e;stroke-width:2.8px}
+.nnode.ntete .ncirc{stroke:var(--c-tete);stroke-width:2.5}
+.nnode.nsel .ncirc{stroke:var(--c-gagne-light);stroke-width:3.5}
+.nnode.nsel text,.nnode.nanchor text{opacity:1;font-weight:700;fill:#fff}
+.nnode.ndim{opacity:.08}
+.nnode.nsat{opacity:.42}
+.nnode.nspotdim{opacity:.06}
+.nnode.nspot{opacity:1}
+.nnode.nspot text{opacity:1;font-weight:700;fill:#fff}
+.net-tip{position:absolute;pointer-events:none;display:none}
+.net-aside{width:330px;border-left:1px solid var(--line);background:var(--panel,#141417);display:flex;flex-direction:column;min-height:0}
+.net-bar{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--line)}
+.net-list{flex:1;overflow:auto;padding:6px 9px}
+.ntk{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:#161619;cursor:pointer}
+.ntk:hover{border-color:var(--c-gagne-light);background:#19211d}
+.ntk-h{display:flex;align-items:center;gap:8px;font-weight:700}
+.ntk-max{color:var(--c-gagne-light);font-size:11px;font-weight:700}
+.ntk-sys{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600}
+.ntk-sels{margin-top:4px;font-size:11px;color:var(--muted);line-height:1.5}
+.ntk-sels b{color:var(--c-gagne-light);font-weight:700}
+.ntk-sels .pp{color:#cdb98a}
+/* segment type (Tous/Buteurs/Passeurs) */
+.nseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.nseg button{background:transparent;color:var(--muted);border:none;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer}
+.nseg button.on{background:#23232a;color:#fff}
+/* max en cours sur carte ticket */
+.tcard-max{color:var(--c-gagne-light);font-size:11px;font-weight:700;margin-left:6px}
+/* barre filtre cumule Tickets */
+.tf-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.tf-jin{flex:1;max-width:280px}
+.tf-active{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.tf-chip{background:var(--c-gagne-light);color:#0c2a20;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer}
+.tf-clear{color:var(--muted);font-size:11px;cursor:pointer;align-self:center;text-decoration:underline}
 </style></head>
 <body>
 <header><div class="logo">WC 2026</div><div class="h-stats" id="hStats"></div><div style="display:flex;align-items:center;gap:10px;margin-left:12px"><span id="syncIndicator" style="font-size:10px;letter-spacing:.08em;color:#555">● sync</span></div></header>
-<nav><button class="active" onclick="goTab('dash',this)">Vue d'ensemble</button><button onclick="goTab('joueurs',this)">Joueurs</button><button onclick="goTab('tickets',this)">Tickets</button><button onclick="goTab('alertes',this)">Alertes</button></nav>
-<main><div id="dash" class="tab active"></div><div id="joueurs" class="tab"></div><div id="tickets" class="tab"></div><div id="alertes" class="tab"></div></main>
+<nav><button class="active" onclick="goTab('dash',this)">Vue d'ensemble</button><button onclick="goTab('joueurs',this)">Joueurs</button><button onclick="goTab('tickets',this)">Tickets</button><button onclick="goTab('reseau',this)">Réseau</button><button onclick="goTab('alertes',this)">Alertes</button></nav>
+<main><div id="dash" class="tab active"></div><div id="joueurs" class="tab"></div><div id="tickets" class="tab"></div><div id="reseau" class="tab"></div><div id="alertes" class="tab"></div></main>
 <div id="tcardOverlay" class="tcard-overlay" onclick="closeOverlay(event)"></div>
 <script>
 /* WC2026 - moteur de calcul - ES5 pur, ASCII only (compatible Safari iOS et Chrome) */
@@ -569,6 +610,7 @@ var WC = (function () {
       statut: statut,                 /* definitif: en_cours | gagne | perdu */
       virtuel: (provG >= X),          /* provisoire: vrai si gele maintenant -> palier atteint */
       gainAcquis: gainAcquis, gainPotentiel: gainPotentiel, gainProjete: gainProjete,
+      maxEnCours: gainAcquis + gainPotentiel,
       gainProchain: gainProchain, prochainJoueur: prochainJoueur,
       paliers: paliers, selStates: st
     };
@@ -577,17 +619,17 @@ var WC = (function () {
   function computeAll(source, players, pays) {
     var mise = (source.meta && source.meta.mise != null) ? source.meta.mise : 0.10;
     var expo = {}, tickets = [], i;
-    var totAcq = 0, totPot = 0, totProj = 0, totProch = 0, nGagne = 0, nPerdu = 0, nEnCours = 0, nVirtuel = 0;
+    var totAcq = 0, totPot = 0, totProj = 0, totProch = 0, totMax = 0, nGagne = 0, nPerdu = 0, nEnCours = 0, nVirtuel = 0;
     for (i = 0; i < source.tickets.length; i++) {
       var r = computeTicket(source.tickets[i], players, pays, mise, expo);
       tickets.push(r);
-      totAcq += r.gainAcquis; totPot += r.gainPotentiel; totProj += r.gainProjete; totProch += r.gainProchain;
+      totAcq += r.gainAcquis; totPot += r.gainPotentiel; totProj += r.gainProjete; totProch += r.gainProchain; totMax += r.maxEnCours;
       if (r.statut === "gagne") nGagne++; else if (r.statut === "perdu") nPerdu++; else nEnCours++;
       if (r.virtuel) nVirtuel++;
     }
     return {
       tickets: tickets, exposition: expo,
-      totaux: { gainAcquis: totAcq, gainPotentiel: totPot, gainProjete: totProj, gainProchain: totProch,
+      totaux: { gainAcquis: totAcq, gainPotentiel: totPot, gainProjete: totProj, gainProchain: totProch, maxEnCours: totMax,
                 nGagne: nGagne, nPerdu: nPerdu, nEnCours: nEnCours, nVirtuel: nVirtuel }
     };
   }
@@ -780,7 +822,22 @@ function segGauge(tk, X){
 /* ============================================================
    RENDER
    ============================================================ */
-let FILTER_PAYS = '';   // filtre pays (Joueurs + Tickets)
+let FILTER_PAYS = '';   // filtre pays (Joueurs)
+var TF = { pays:{}, joueurs:{}, type:'all' };  // filtre cumule (Tickets + Reseau)
+function tfCount(){ return Object.keys(TF.pays).length + Object.keys(TF.joueurs).length + (TF.type!=='all'?1:0); }
+function tfTogglePays(k){ if(TF.pays[k])delete TF.pays[k]; else TF.pays[k]=1; render(); }
+function tfToggleJoueur(k){ if(!k)return; if(TF.joueurs[k])delete TF.joueurs[k]; else TF.joueurs[k]=1; render(); }
+function tfSetType(t){ TF.type=t; render(); }
+function tfClear(){ TF={pays:{},joueurs:{},type:'all'}; render(); }
+function tfAddJoueurByLabel(v){ var k=JLABEL2KEY[v]; if(k){ TF.joueurs[k]=1; render(); } }
+function tkPasseTF(tk){
+  if(TF.type!=='all' && !tk.selections.some(function(s){return s.type===TF.type;})) return false;
+  for(var p in TF.pays){ if(!tk.selections.some(function(s){return pKeyN(s.pays)===p;})) return false; }
+  for(var j in TF.joueurs){ if(!tk.selections.some(function(s){return eKey(s.joueur,s.pays,s.type)===j;})) return false; }
+  return true;
+}
+var JLABEL2KEY={};
+function joueurLabels(){ JLABEL2KEY={}; var seen={},out=[]; TICKETS.forEach(function(t){t.selections.forEach(function(s){var k=eKey(s.joueur,s.pays,s.type); if(seen[k])return; seen[k]=1; var lab=cap(s.joueur)+' ('+pays3(s.pays)+(s.type==='passeur'?', P':'')+')'; JLABEL2KEY[lab]=k; out.push(lab);});}); return out.sort(); }
 let TFILTER_CAT = null; // filtre statut (onglet Tickets)
 let DASH_FILTER = null; // filtre liste tickets (Vue d'ensemble)
 
@@ -791,6 +848,7 @@ function render(){
   else if(TAB==='joueurs') renderJoueurs(R);
   else if(TAB==='tickets') renderTickets(R);
   else if(TAB==='alertes') renderAlertes(R);
+  else if(TAB==='reseau') renderReseau(R);
   if(OVERLAY_ID && OVERLAY_ID!=='__form__') drawOverlay();
 }
 
@@ -926,8 +984,28 @@ function renderJoueurs(R){
 
 /* ---- TICKETS ---- */
 function setTFilter(c){ TFILTER_CAT=(TFILTER_CAT===c)?null:c; render(); }
+function ticketFilterBar(){
+  var m={}; TICKETS.forEach(function(t){t.selections.forEach(function(s){var k=pKeyN(s.pays);(m[k]=m[k]||{nom:s.pays,n:0}).n++;});});
+  var arr=Object.keys(m).map(function(k){return {k:k,nom:m[k].nom,n:m[k].n};}).sort(function(a,b){return b.n-a.n;});
+  var chips=arr.map(function(p){var act=TF.pays[p.k]?'active':''; var elim=paysStatus(p.nom)==='elimine'?'elim':'';
+    return '<span class="pays-chip '+elim+' '+act+'" onclick="tfTogglePays(\''+esc(p.k)+'\')"><span class="pcn" title="'+p.nom+'">'+pays3(p.nom)+'</span><span class="pcc">'+p.n+'</span></span>';}).join('');
+  var labs=joueurLabels();
+  var dl='<datalist id="jdl">'+labs.map(function(l){return '<option value="'+l.replace(/"/g,'&quot;')+'">';}).join('')+'</datalist>';
+  var seg='<div class="nseg">'+['all','buteur','passeur'].map(function(t){return '<button class="'+(TF.type===t?'on':'')+'" onclick="tfSetType(\''+t+'\')">'+(t==='all'?'Tous':t==='buteur'?'Buteurs':'Passeurs')+'</button>';}).join('')+'</div>';
+  var active='';
+  var aj=Object.keys(TF.joueurs), ap=Object.keys(TF.pays);
+  if(aj.length||ap.length||TF.type!=='all'){
+    active='<div class="tf-active">'+
+      ap.map(function(k){return '<span class="tf-chip" onclick="tfTogglePays(\''+esc(k)+'\')">'+pays3(m[k]?m[k].nom:k)+' ✕</span>';}).join('')+
+      aj.map(function(k){var a2=k.split('|'); return '<span class="tf-chip" onclick="tfToggleJoueur(\''+esc(k)+'\')">'+cap(a2[0])+' ✕</span>';}).join('')+
+      '<span class="tf-clear" onclick="tfClear()">tout effacer</span></div>';
+  }
+  return '<div class="label">Filtres cumulés (ET) — pays · joueur · type</div>'+
+    '<div class="tf-row">'+seg+'<input class="jfilter tf-jin" list="jdl" placeholder="Ajouter un joueur…" onchange="tfAddJoueurByLabel(this.value);this.value=\'\'"></div>'+dl+
+    '<div class="pays-bar">'+chips+'</div>'+active;
+}
 function renderTickets(R){
-  let html = `<div class="label">Pays — clic = filtrer · ✕ = bascule en course / éliminé</div>${paysBanner()}`;
+  let html = ticketFilterBar();
   html += `<div class="legend">
     <span class="leg" onclick="setTFilter('gagne')"><span class="leg-dot" style="background:var(--c-gagne)"></span>gagné</span>
     <span class="leg" onclick="setTFilter('vivant')"><span class="leg-dot" style="background:var(--c-gagne-light)"></span>virt. gagnant</span>
@@ -939,12 +1017,12 @@ function renderTickets(R){
   R.tickets.forEach(r=>{
     const c=cat(r); if(TFILTER_CAT && c!==TFILTER_CAT) return;
     const tk=TICKETS.find(x=>x.id===r.id);
-    if(FILTER_PAYS && !tk.selections.some(s=>pKeyN(s.pays)===FILTER_PAYS)) return;
+    if(!tkPasseTF(tk)) return;
     const badge=r.statut==='gagne'?'win':r.statut==='perdu'?'idle':r.virtuel?'win':c==='proche'?'close':'idle';
     const blab=r.statut==='gagne'?'gagné':r.statut==='perdu'?'perdu':r.virtuel?'virt. gagnant':c==='proche'?'proche':'en cours';
     html += `<div class="tcard">
       <div class="tcard-head" onclick="openOverlay('${r.id}')">
-        <span class="tcard-nom">${tk.nom}</span><span class="tcard-sys">${tk.systeme}</span>
+        <span class="tcard-nom">${tk.nom}</span><span class="tcard-max" title="montant max encore atteignable">↑ ${fmt(r.maxEnCours)}</span><span class="tcard-sys">${tk.systeme}</span>
         <span class="tcard-frac">${r.provG}/${r.X}</span>
         <span class="tcard-badge ${badge}">${blab}</span>
         <span class="tcard-gain-head" style="color:var(--c-gagne-light)">${fmt(r.gainProjete)} <span style="color:var(--c-tete);font-size:10px">▸${fmt(r.gainProchain)}</span></span>
@@ -1082,6 +1160,141 @@ async function deleteTicket(id){ if(!confirm('Supprimer ce ticket ?'))return; TI
 
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeOverlay(); });
 init();
+
+/* ============================================================
+   ONGLET RESEAU - graphe joueurs (noms primaires, liens au survol)
+   partage le filtre cumule TF avec la vue Tickets
+   ============================================================ */
+var NET = { built:false, sig:'', pos:{}, nodeEls:{}, edgeEls:[], nodes:[], adj:{}, tx:0, ty:0, sc:1 };
+
+function netBuildData(){
+  var nodes={}, adj={}, edges=[], eseen={};
+  TICKETS.forEach(function(t){
+    var ids=[];
+    t.selections.forEach(function(s){
+      var k=eKey(s.joueur,s.pays,s.type);
+      if(!nodes[k]) nodes[k]={id:k,name:s.joueur,pays:s.pays,type:s.type,freq:0};
+      nodes[k].freq++; ids.push(k);
+    });
+    ids=ids.filter(function(v,i){return ids.indexOf(v)===i;});
+    for(var i=0;i<ids.length;i++)for(var j=i+1;j<ids.length;j++){ var pr=ids[i]<ids[j]?[ids[i],ids[j]]:[ids[j],ids[i]]; eseen[pr[0]+'~'+pr[1]]=pr; }
+  });
+  Object.keys(eseen).forEach(function(kk){ edges.push(eseen[kk]); });
+  Object.keys(nodes).forEach(function(k){adj[k]=[];});
+  edges.forEach(function(e){ adj[e[0]].push(e[1]); adj[e[1]].push(e[0]); });
+  return {nodes:nodes,edges:edges,adj:adj};
+}
+
+function netLayout(ids, edges){
+  var W=1000,H=1000, k=Math.sqrt((W*H)/Math.max(1,ids.length)), pos={};
+  var rnd=1; function rr(){ rnd=(rnd*9301+49297)%233280; return rnd/233280; }
+  ids.forEach(function(id){ pos[id]=[rr()*W,rr()*H]; });
+  for(var it=0; it<280; it++){
+    var disp={}; ids.forEach(function(id){disp[id]=[0,0];});
+    for(var i=0;i<ids.length;i++){ for(var j=i+1;j<ids.length;j++){
+      var a=ids[i],b=ids[j],dx=pos[a][0]-pos[b][0],dy=pos[a][1]-pos[b][1],d=Math.sqrt(dx*dx+dy*dy)+.01,f=k*k/d,ux=dx/d,uy=dy/d;
+      disp[a][0]+=ux*f;disp[a][1]+=uy*f;disp[b][0]-=ux*f;disp[b][1]-=uy*f;
+    }}
+    edges.forEach(function(e){ var a=e[0],b=e[1],dx=pos[a][0]-pos[b][0],dy=pos[a][1]-pos[b][1],d=Math.sqrt(dx*dx+dy*dy)+.01,f=d*d/k*.5,ux=dx/d,uy=dy/d;
+      disp[a][0]-=ux*f;disp[a][1]-=uy*f;disp[b][0]+=ux*f;disp[b][1]+=uy*f; });
+    var t=Math.max(2,38*(1-it/280));
+    ids.forEach(function(id){ var dx=disp[id][0],dy=disp[id][1],d=Math.sqrt(dx*dx+dy*dy)+1e-9,m=Math.min(d,t);
+      pos[id][0]=Math.min(W-20,Math.max(20,pos[id][0]+dx/d*m)); pos[id][1]=Math.min(H-20,Math.max(20,pos[id][1]+dy/d*m)); });
+  }
+  return pos;
+}
+
+function netVisType(n){ return TF.type==='all'||n.type===TF.type; }
+
+function renderReseau(R){
+  var sig=TICKETS.map(function(t){return t.id;}).join(',');
+  var host=document.getElementById('reseau');
+  if(!NET.built || NET.sig!==sig){
+    NET.sig=sig;
+    var D=netBuildData(); NET.adj=D.adj; NET.nodes=Object.keys(D.nodes).map(function(k){return D.nodes[k];});
+    var ids=NET.nodes.map(function(n){return n.id;});
+    NET.pos=netLayout(ids,D.edges);
+    host.innerHTML='<div class="net-wrap">'+
+      '<div class="net-graph" id="netGraph"><svg id="netSvg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"><g id="netView"><g id="netEdges"></g><g id="netNodes"></g></g></svg><div class="net-tip" id="netTip"></div></div>'+
+      '<aside class="net-aside"><div class="net-bar"><div class="nseg" id="netSeg"></div><button class="add-tk-btn" style="padding:5px 10px" onclick="tfClear()">Réinitialiser</button><span class="count" id="netCount"></span></div><div class="net-list" id="netList"></div></aside>'+
+      '</div>';
+    var NS='http://www.w3.org/2000/svg';
+    var gE=document.getElementById('netEdges'), gN=document.getElementById('netNodes');
+    NET.edgeEls=[]; NET.nodeEls={};
+    D.edges.forEach(function(e){
+      var a=D.nodes[e[0]],b=D.nodes[e[1]],l=document.createElementNS(NS,'line');
+      l.setAttribute('x1',NET.pos[e[0]][0]);l.setAttribute('y1',NET.pos[e[0]][1]);
+      l.setAttribute('x2',NET.pos[e[1]][0]);l.setAttribute('y2',NET.pos[e[1]][1]);
+      l.setAttribute('class','nedge'); l._a=e[0]; l._b=e[1]; gE.appendChild(l); NET.edgeEls.push(l);
+    });
+    NET.nodes.forEach(function(n){
+      var g=document.createElementNS(NS,'g'); g.setAttribute('class','nnode'); g.setAttribute('transform','translate('+NET.pos[n.id][0]+','+NET.pos[n.id][1]+')');
+      var r=4+Math.min(n.freq,14)*1.1;
+      var c=document.createElementNS(NS,'circle'); c.setAttribute('r',r); c.setAttribute('fill',n.type==='buteur'?'#7aa2f7':'#e0af68'); c.setAttribute('class','ncirc');
+      var t=document.createElementNS(NS,'text'); t.setAttribute('x',r+2); t.setAttribute('y',3); t.textContent=cap(n.name)+(n.type==='passeur'?' (P)':'');
+      g.appendChild(c); g.appendChild(t);
+      g.addEventListener('click',function(ev){ev.stopPropagation(); tfToggleJoueur(n.id);});
+      g.addEventListener('mouseenter',function(){ netSpot([n.id].concat(NET.adj[n.id])); });
+      g.addEventListener('mouseleave',function(){ netClearSpot(); });
+      gN.appendChild(g); NET.nodeEls[n.id]=g;
+    });
+    netInitPanZoom();
+    NET.built=true;
+  }
+  // seg type
+  document.getElementById('netSeg').innerHTML=['all','buteur','passeur'].map(function(t){return '<button class="'+(TF.type===t?'on':'')+'" onclick="tfSetType(\''+t+'\')">'+(t==='all'?'Tous':t==='buteur'?'Buteurs':'Passeurs')+'</button>';}).join('');
+  netUpdate();
+}
+
+function netSpot(ids){
+  var s={}; ids.forEach(function(i){ var n=nodeByKeyNet(i); if(n&&netVisType(n)) s[i]=1; });
+  for(var k in NET.nodeEls){ var el=NET.nodeEls[k]; el.classList.remove('nspot','nspotdim'); el.classList.add(s[k]?'nspot':'nspotdim'); }
+  NET.edgeEls.forEach(function(l){ l.classList.toggle('nlit', !!(s[l._a]&&s[l._b])); });
+}
+function netClearSpot(){ for(var k in NET.nodeEls){ NET.nodeEls[k].classList.remove('nspot','nspotdim'); } NET.edgeEls.forEach(function(l){ l.classList.remove('nlit'); }); }
+function nodeByKeyNet(k){ for(var i=0;i<NET.nodes.length;i++) if(NET.nodes[i].id===k) return NET.nodes[i]; return null; }
+
+function netUpdate(){
+  if(!NET.built) return;
+  // visibilite type + anneau tete + etat selection/filtre
+  var matched=TICKETS.filter(tkPasseTF);
+  var keep={}; matched.forEach(function(t){t.selections.forEach(function(s){keep[eKey(s.joueur,s.pays,s.type)]=1;});});
+  var anyF=tfCount()>0;
+  NET.nodes.forEach(function(n){
+    var g=NET.nodeEls[n.id]; if(!g)return;
+    g.style.display=netVisType(n)?'':'none';
+    g.classList.toggle('ntete', statusOf(n.name,n.pays,n.type)==='tete');
+    g.classList.toggle('nsel', !!TF.joueurs[n.id]);
+    g.classList.remove('ndim','nsat','nanchor','nspot','nspotdim');
+    if(anyF){
+      if(!keep[n.id]) g.classList.add('ndim');
+      else if(TF.joueurs[n.id]||TF.pays[pKeyN(n.pays)]) g.classList.add('nanchor');
+      else g.classList.add('nsat');
+    }
+  });
+  NET.edgeEls.forEach(function(l){ l.classList.remove('nlit'); });
+  document.getElementById('netCount').textContent=matched.length+' / '+TICKETS.length+' tickets';
+  // liste tickets (survol = reseau du ticket)
+  var html=matched.map(function(t){
+    var r=WC.computeTicket(t,P,PAYS,MISE,null);
+    var sels=t.selections.map(function(s){var on=TF.joueurs[eKey(s.joueur,s.pays,s.type)]; var lab=cap(s.joueur)+(s.type==='passeur'?' (P)':''); return on?('<b>'+lab+'</b>'):('<span class="pp">'+lab+'</span>');}).join(' + ');
+    return '<div class="ntk" data-tid="'+t.id+'"><div class="ntk-h"><span>'+t.nom+'</span><span class="ntk-max">↑ '+fmt(r.maxEnCours)+'</span><span class="ntk-sys">'+t.systeme+'</span></div><div class="ntk-sels">'+sels+'</div></div>';
+  }).join('');
+  var list=document.getElementById('netList'); list.innerHTML=html||'<div class="empty">Aucun ticket</div>';
+}
+
+function netInitPanZoom(){
+  var view=document.getElementById('netView'), svg=document.getElementById('netSvg'), tip=document.getElementById('netTip'), graph=document.getElementById('netGraph'), list=document.getElementById('netList');
+  function apply(){ view.setAttribute('transform','translate('+NET.tx+','+NET.ty+') scale('+NET.sc+')'); }
+  apply();
+  var drag=false,sx,sy;
+  svg.addEventListener('mousedown',function(e){drag=true;sx=e.clientX;sy=e.clientY;svg.style.cursor='grabbing';});
+  window.addEventListener('mousemove',function(e){ if(!drag)return; NET.tx+=e.clientX-sx;NET.ty+=e.clientY-sy;sx=e.clientX;sy=e.clientY;apply();});
+  window.addEventListener('mouseup',function(){drag=false;svg.style.cursor='grab';});
+  svg.addEventListener('wheel',function(e){ e.preventDefault(); var rc=svg.getBoundingClientRect(),mx=e.clientX-rc.left,my=e.clientY-rc.top,f=e.deltaY<0?1.12:.89,ns=Math.min(6,Math.max(.3,NET.sc*f)),kk=ns/NET.sc; NET.tx=mx-(mx-NET.tx)*kk; NET.ty=my-(my-NET.ty)*kk; NET.sc=ns; apply(); },{passive:false});
+  list.addEventListener('mouseover',function(e){ var d=e.target.closest('.ntk'); if(d&&d.dataset.tid){ var t=TICKETS.find(function(x){return x.id===d.dataset.tid;}); if(t) netSpot(t.selections.map(function(s){return eKey(s.joueur,s.pays,s.type);})); } });
+  list.addEventListener('mouseleave',function(){ netClearSpot(); });
+}
 
 </script>
 </body></html>
