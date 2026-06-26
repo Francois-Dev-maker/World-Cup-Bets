@@ -47,8 +47,6 @@ main{padding:10px;}
 /* joueurs */
 .plist{display:flex;flex-direction:column;gap:8px;}
 .pcard{background:var(--panel);border:1px solid var(--line);border-top:2px solid transparent;border-bottom:2px solid transparent;border-radius:11px;padding:9px 11px;}
-.pcard.fr-encours{border-top-color:var(--c-tete);border-bottom-color:var(--c-tete);}
-.pcard.fr-elim{border-top-color:#555;border-bottom-color:#555;}
 .pc-top{display:flex;flex-direction:column;gap:1px;margin-bottom:7px;}
 .pc-name{font-weight:700;font-size:15px;}
 .pc-meta{font-size:11px;color:var(--muted);}
@@ -149,6 +147,15 @@ main{padding:10px;}
 .ntk-sels{margin-top:4px;font-size:11px;color:var(--muted);line-height:1.5}
 .ntk-sels b{color:var(--c-gagne-light);font-weight:700}
 .ntk-sels .pp{color:#cdb98a}
+
+.pcard.po-tete{border-top-color:var(--c-tete);border-bottom-color:var(--c-tete);}
+.pcard.po-gagne{border-top-color:var(--c-gagne-light);border-bottom-color:var(--c-gagne-light);}
+.pcard.po-depasse{border-top-color:var(--c-depasse);border-bottom-color:var(--c-depasse);}
+.pcard.po-perdu{border-top-color:#45453f;border-bottom-color:#45453f;opacity:.55;}
+.pcard.po-attente{border-top-color:#33332f;border-bottom-color:#33332f;}
+.seg-split{flex:1;height:9px;border-radius:3px;overflow:hidden;display:flex;gap:1px;}
+.seg-part{flex:1;height:9px;}
+.exae-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:rgba(249,168,201,.14);color:var(--c-tete);border:1px solid rgba(249,168,201,.35);}
 </style></head>
 <body>
 <header><div class="htop"><div class="logo">WC 2026</div><span id="syncDot">○</span></div><div class="kpis" id="kpis"></div></header>
@@ -362,7 +369,7 @@ function paysStatus(p){ var o=PAYS[pKeyN(p)]; return o?o.status:"en_course"; }
 function outcomeOf(j,p,t){ var st=statusOf(j,p,t), py=paysStatus(p); if(py==="elimine") return st==="tete"?"gagne":"perdu"; return st; }
 function outcomeSel(s){ return outcomeOf(s.joueur,s.pays,s.type); }
 function nameStyle(o){ if(o==="tete") return "color:var(--c-tete)"; if(o==="gagne") return "color:var(--c-gagne-light)"; if(o==="perdu") return "color:#7a7a72"; if(o==="depasse") return "color:var(--c-depasse)"; return "color:#e6e6e6"; }
-function frameCls(p){ return paysStatus(p)==="elimine" ? "fr-elim" : "fr-encours"; }
+function pcCls(o){ return "po-"+o; }
 
 function setStatus(j,p,t,s){
   var k=eKey(j,p,t), cur=P[k]||{status:"attente",n_egalite:1};
@@ -377,11 +384,20 @@ function setPays(p,s){ PAYS[pKeyN(p)]={status:s}; savePays(pKeyN(p),s); render()
 function togglePays(p){ setPays(p, paysStatus(p)==="elimine"?"en_course":"elimine"); }
 
 /* ---------- jauge segments ---------- */
+function segCell(o,neg){
+  if((o==="tete"||o==="gagne")&&neg>1){
+    var colored=o==="gagne"?"var(--c-gagne-light)":"var(--c-tete)";
+    var lost=o==="gagne"?"#45453f":"#5a5a52";
+    var inner="",i; for(i=0;i<neg;i++) inner+="<span class='seg-part' style='background:"+(i===0?colored:lost)+"'></span>";
+    return "<span class='seg-split' title='ex-aequo /"+neg+"'>"+inner+"</span>";
+  }
+  return "<span class='seg' style='background:"+SEG_COL[o]+"'></span>";
+}
 function segGauge(tk, X){
-  var i, segs=[]; for(i=0;i<tk.selections.length;i++) segs.push(outcomeSel(tk.selections[i]));
-  segs.sort(function(a,b){ return PRIO[a]-PRIO[b]; });
-  var N=segs.length, bars="";
-  for(i=0;i<N;i++) bars+="<span class='seg' style='background:"+SEG_COL[segs[i]]+"'></span>";
+  var i, cells=[]; for(i=0;i<tk.selections.length;i++){ var s=tk.selections[i]; cells.push({o:outcomeSel(s),neg:negOf(s.joueur,s.pays,s.type)}); }
+  cells.sort(function(a,b){ return PRIO[a.o]-PRIO[b.o]; });
+  var N=cells.length, bars="";
+  for(i=0;i<N;i++) bars+=segCell(cells[i].o,cells[i].neg);
   var left=((X-0.5)/N*100);
   return "<div class='seg-wrap'><div class='seg-cursor' style='left:"+left+"%'>\u25bc</div><div class='seg-row'>"+bars+"</div></div>";
 }
@@ -517,13 +533,13 @@ function renderJoueurs(R){
   for(i=0;i<keys.length;i++){ k=keys[i]; pl=cat[k]; a=k.split("|");
     if(FILTER_PAYS && pKeyN(pl.pays)!==FILTER_PAYS) continue;
     cur=getP(pl.joueur,pl.pays,pl.type); o=outcomeOf(pl.joueur,pl.pays,pl.type); neg=cur.n_egalite||1; ex=R.exposition[k];
-    h+="<div class='pcard "+frameCls(pl.pays)+"' data-s='"+nrm(pl.joueur+" "+pl.pays)+"'>"+
+    h+="<div class='pcard "+pcCls(o)+"' data-s='"+nrm(pl.joueur+" "+pl.pays)+"'>"+
        "<div class='pc-top'><span class='pc-name' style='"+nameStyle(o)+"'>"+cap(a[0])+"</span><span class='pc-meta'>"+pays3(pl.pays)+(paysStatus(pl.pays)==="elimine"?" \u2715":"")+" \u00b7 <span class='tbadge "+pl.type+"'>"+pl.type+"</span> \u00b7 \u00d7"+pl.cote_ref+(ex?" \u00b7 porte "+fmt(ex.potentiel):"")+(ex&&ex.plancher?" \u00b7 decl. "+fmt(ex.plancher):"")+"</span></div>"+
        "<div class='pc-btns'>";
     for(j=0;j<STATUSES.length;j++){ h+="<button class='sbtn "+(cur.status===STATUSES[j]?"on-"+STATUSES[j]:"")+"' onclick=\"setStatus('"+esc(pl.joueur)+"','"+esc(pl.pays)+"','"+pl.type+"','"+STATUSES[j]+"')\">"+SLABELS[STATUSES[j]]+"</button>"; }
     h+="<button class='sbtn "+(paysStatus(pl.pays)==="elimine"?"on-depasse":"")+"' onclick=\"event.stopPropagation();togglePays('"+esc(pl.pays)+"')\">\u2691</button>";
     h+="</div>";
-    if(cur.status==="tete"){ h+="<div class='pc-neg'>egalite \u00f7"+neg+" \u2192 "+(Math.max(pl.cote_ref/neg,1)).toFixed(2)+
+    if(cur.status==="tete"){ h+="<div class='pc-neg'><span class='exae-badge'>"+(neg>1?"ex-aequo \u00f7"+neg:"seul en tete")+" \u00b7 "+(Math.max(pl.cote_ref/neg,1)).toFixed(2)+"</span>"+
       " <button class='mini' onclick=\"setNeg('"+esc(pl.joueur)+"','"+esc(pl.pays)+"','"+pl.type+"',"+(neg-1)+")\">\u2212</button>"+
       "<button class='mini' onclick=\"setNeg('"+esc(pl.joueur)+"','"+esc(pl.pays)+"','"+pl.type+"',"+(neg+1)+")\">+</button></div>"; }
     h+="</div>";
@@ -553,7 +569,7 @@ function drawSheet(){
   var sel="", s, cur, no;
   for(i=0;i<tk.selections.length;i++){ s=tk.selections[i]; no=outcomeSel(s); cur=statusOf(s.joueur,s.pays,s.type); neg=negOf(s.joueur,s.pays,s.type);
     sel+="<div class='sh-sel'><span class='dot' style='background:"+SEG_COL[no]+"'></span><span class='sh-name' style='"+nameStyle(no)+"'>"+cap(s.joueur)+"</span>"+
-      "<span class='sh-pays'>"+pays3(s.pays)+(paysStatus(s.pays)==="elimine"?" \u2715":"")+"</span><span class='tbadge "+s.type+"'>"+s.type+"</span><span class='sh-cote'>\u00d7"+s.cote+(neg>1?"\u00f7"+neg:"")+"</span>"+
+      "<span class='sh-pays'>"+pays3(s.pays)+(paysStatus(s.pays)==="elimine"?" \u2715":"")+"</span><span class='tbadge "+s.type+"'>"+s.type+"</span><span class='sh-cote'>\u00d7"+s.cote+"</span>"+(neg>1?"<span class='exae-badge' style='font-size:9px;padding:0 5px'>ex-aequo \u00f7"+neg+"</span>":"")+
       "<div class='sh-btns'>";
     for(var b=0;b<STATUSES.length;b++){ sel+="<button class='mini "+(cur===STATUSES[b]?"on-"+STATUSES[b]:"")+"' onclick=\"setStatus('"+esc(s.joueur)+"','"+esc(s.pays)+"','"+s.type+"','"+STATUSES[b]+"')\">"+SLABELS[STATUSES[b]]+"</button>"; }
     sel+="<button class='mini "+(paysStatus(s.pays)==="elimine"?"on-depasse":"")+"' onclick=\"togglePays('"+esc(s.pays)+"')\">\u2691</button></div></div>"; }

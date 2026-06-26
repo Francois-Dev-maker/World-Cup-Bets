@@ -353,8 +353,6 @@ main{padding:20px 24px}
 .cote-badge.port{color:var(--rose-dim,#c98aa6);}
 /* cadre carte joueur selon pays */
 .pcard{border-top:2px solid transparent;border-bottom:2px solid transparent;}
-.pcard.fr-encours{border-top-color:var(--c-tete);border-bottom-color:var(--c-tete);}
-.pcard.fr-elim{border-top-color:#555;border-bottom-color:#555;}
 /* bandeau pays */
 .pays-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
 .pays-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border:1px solid var(--line);border-radius:20px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
@@ -468,6 +466,18 @@ main{padding:20px 24px}
 .tf-active{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
 .tf-chip{background:var(--c-gagne-light);color:#0c2a20;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer}
 .tf-clear{color:var(--muted);font-size:11px;cursor:pointer;align-self:center;text-decoration:underline}
+
+/* liseré carte joueur = statut du joueur */
+.pcard.po-tete{border-top-color:var(--c-tete);border-bottom-color:var(--c-tete);}
+.pcard.po-gagne{border-top-color:var(--c-gagne-light);border-bottom-color:var(--c-gagne-light);}
+.pcard.po-depasse{border-top-color:var(--c-depasse);border-bottom-color:var(--c-depasse);}
+.pcard.po-perdu{border-top-color:#45453f;border-bottom-color:#45453f;opacity:.55;}
+.pcard.po-attente{border-top-color:#33332f;border-bottom-color:#33332f;}
+/* segment divise par ex-aequo */
+.seg-split{flex:1;height:9px;border-radius:3px;overflow:hidden;display:flex;gap:1px;}
+.seg-part{flex:1;height:9px;}
+/* badge ex-aequo lisible */
+.exae-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:rgba(249,168,201,.14);color:var(--c-tete);border:1px solid rgba(249,168,201,.35);}
 </style></head>
 <body>
 <header><div class="logo">WC 2026</div><div class="h-stats" id="hStats"></div><div style="display:flex;align-items:center;gap:10px;margin-left:12px"><span id="syncIndicator" style="font-size:10px;letter-spacing:.08em;color:#555">● sync</span></div></header>
@@ -808,13 +818,23 @@ function nameStyle(o){
   if(o==='depasse') return 'color:var(--c-depasse)';
   return 'color:#e6e6e6'; // attente -> blanc
 }
-function frameCls(p){ return paysStatus(p)==='elimine' ? 'fr-elim' : 'fr-encours'; }
+function pcCls(o){ return 'po-'+o; }
 
 /* jauge à segments : 1 segment / sélection (couleur = outcome), curseur ▼ au-dessus du seuil X */
+function segCell(o, neg){
+  if((o==='tete'||o==='gagne') && neg>1){
+    const colored = o==='gagne' ? 'var(--c-gagne-light)' : 'var(--c-tete)';
+    const lost = o==='gagne' ? '#45453f' : '#5a5a52';
+    let inner='';
+    for(let i=0;i<neg;i++) inner+=`<span class="seg-part" style="background:${i===0?colored:lost}"></span>`;
+    return `<span class="seg-split" title="ex-æquo ÷${neg}">${inner}</span>`;
+  }
+  return `<span class="seg" style="background:${SEG_COL[o]}"></span>`;
+}
 function segGauge(tk, X){
-  const segs = tk.selections.map(s=>outcomeSel(s)).sort((a,b)=>PRIO[a]-PRIO[b]);
-  const N = segs.length;
-  const bars = segs.map(o=>`<span class="seg" style="background:${SEG_COL[o]}"></span>`).join('');
+  const cells = tk.selections.map(s=>({o:outcomeSel(s), neg:negOf(s.joueur,s.pays,s.type)})).sort((a,b)=>PRIO[a.o]-PRIO[b.o]);
+  const N = cells.length;
+  const bars = cells.map(c=>segCell(c.o,c.neg)).join('');
   const left = ((X-0.5)/N*100);
   return `<div class="seg-wrap"><div class="seg-cursor" style="left:${left}%">▼</div><div class="seg-row">${bars}</div></div>`;
 }
@@ -965,14 +985,14 @@ function renderJoueurs(R){
     if(FILTER_PAYS && pKeyN(pl.pays)!==FILTER_PAYS) return;
     const cur=getP(pl.joueur,pl.pays,pl.type); const o=outcomeOf(pl.joueur,pl.pays,pl.type);
     const neg=cur.n_egalite||1; const ex=expo[pl.k];
-    html += `<div class="pcard ${frameCls(pl.pays)}" data-s="${WC.norm(pl.joueur+' '+pl.pays)}"><div class="pcard-top">
+    html += `<div class="pcard ${pcCls(o)}" data-s="${WC.norm(pl.joueur+' '+pl.pays)}"><div class="pcard-top">
         <div class="pcard-name" style="${nameStyle(o)}">${cap(a[0])}</div>
         <div class="pcard-count ${cnt[pl.k]>=4?'hi':''}">${cnt[pl.k]||0}×</div></div>
       <div class="pcard-meta"><span title="${pl.pays}">${pays3(pl.pays)}${paysStatus(pl.pays)==='elimine'?' ✕':''}</span><span class="tbadge ${pl.type}">${pl.type}</span><span class="cote-badge">×${pl.cote_ref}</span>${ex?`<span class="cote-badge port">porte ${fmt(ex.potentiel)}</span>`:''}${ex&&ex.plancher?`<span class="cote-badge" style="color:var(--c-tete)">declenche ${fmt(ex.plancher)}</span>`:''}</div>
       <div class="pcard-btns">
         ${STATUSES.map(s=>`<button class="sbtn ${cur.status===s?'on-'+s:''}" onclick="setStatus('${esc(pl.joueur)}','${esc(pl.pays)}','${pl.type}','${s}')">${SLABELS[s]}</button>`).join('')}
       </div>
-      ${cur.status==='tete' ? `<div class="pcard-btns" style="margin-top:4px;align-items:center"><span class="cote-badge">égalité ÷${neg} → ${(Math.max(pl.cote_ref/neg,1)).toFixed(2)}</span>
+      ${cur.status==='tete' ? `<div class="pcard-btns" style="margin-top:4px;align-items:center"><span class="exae-badge">${neg>1?`ex-æquo ÷${neg}`:'seul en tête'} · ${(Math.max(pl.cote_ref/neg,1)).toFixed(2)}</span>
         <button class="mini-sbtn" onclick="setNeg('${esc(pl.joueur)}','${esc(pl.pays)}','${pl.type}',${neg-1})">−</button>
         <button class="mini-sbtn" onclick="setNeg('${esc(pl.joueur)}','${esc(pl.pays)}','${pl.type}',${neg+1})">+</button></div>`:''}
     </div>`;
@@ -1063,7 +1083,7 @@ function drawOverlay(){
       <span class="sheet-sel-name" style="${nameStyle(o)}">${cap(s.joueur)}</span>
       <span class="sel-pays" title="${s.pays}">${pays3(s.pays)}${paysStatus(s.pays)==='elimine'?' ✕':''}</span>
       <span class="tbadge ${s.type}">${s.type}</span>
-      <span class="sel-cote">×${s.cote}${neg>1?'÷'+neg:''}</span>
+      <span class="sel-cote">×${s.cote}</span>${neg>1?`<span class="exae-badge" style="font-size:9px;padding:0 5px">ex-æquo ÷${neg}</span>`:''}
       <span class="sel-actions">${STATUSES.map(st=>`<button class="mini-sbtn ${cur===st?'on-'+st:''}" onclick="setStatus('${esc(s.joueur)}','${esc(s.pays)}','${s.type}','${st}')">${SLABELS[st]}</button>`).join('')}
       <button class="mini-sbtn ${paysStatus(s.pays)==='elimine'?'on-depasse':''}" title="pays en course / éliminé" onclick="togglePays('${esc(s.pays)}')">⚑</button></span></div>`; }).join('');
   const paliers = r.paliers.map(p=>{ const cl=p.mort?'mort':(p.manqueProv<=1?'next':''); const w=Math.min(100,p.gainProjete/(r.gainPotentiel||1)*100*4);
