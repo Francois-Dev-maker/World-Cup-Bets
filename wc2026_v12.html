@@ -943,7 +943,7 @@ function renderDash(R){
   html += `</div></div>`;
   // liste tickets segmentée
   html += `<div class="label">Tous les tickets ${DASH_FILTER?`· filtre <span class="chart-reset" onclick="setDashFilter(null)">✕ ${DASH_FILTER}</span>`:''}</div><div class="tklist">`;
-  R.tickets.forEach(r=>{ if(DASH_FILTER && cat(r)!==DASH_FILTER) return; html+=tkLine(r); });
+  sortTk(R.tickets).forEach(r=>{ if(DASH_FILTER && cat(r)!==DASH_FILTER) return; html+=tkLine(r); });
   html += `</div>`;
   document.getElementById('dash').innerHTML = html;
 }
@@ -957,6 +957,10 @@ function donutSVG(cats,legend){
   const tot=legend.reduce((s,[k])=>s+(cats[k]||0),0);
   return `<svg viewBox="0 0 140 140" width="132" height="132">${segs}<text x="70" y="68" text-anchor="middle" fill="var(--text)" font-size="28" font-weight="700">${tot}</text><text x="70" y="88" text-anchor="middle" fill="var(--muted2)" font-size="9" letter-spacing="1.5">TICKETS</text></svg>`;
 }
+
+/* tri tickets : acquis puis virtuels en tete, perdus en queue, sinon gain max decroissant */
+function tkSortKey(r){ return r.statut==='gagne'?0 : r.virtuel?1 : r.statut==='perdu'?3 : 2; }
+function sortTk(arr){ return arr.slice().sort(function(a,b){ return (tkSortKey(a)-tkSortKey(b)) || (b.maxEnCours-a.maxEnCours); }); }
 
 /* ligne ticket segmentée (dash + réutilisable) */
 function tkLine(r){
@@ -1034,7 +1038,7 @@ function renderTickets(R){
     <span class="leg" onclick="setTFilter('mort')"><span class="leg-dot" style="background:#45453f"></span>perdu</span>
     ${TFILTER_CAT?`<span class="chart-reset" onclick="setTFilter(null)">✕ ${TFILTER_CAT}</span>`:''}</div>`;
   html += `<div class="tgrid">`;
-  R.tickets.forEach(r=>{
+  sortTk(R.tickets).forEach(r=>{
     const c=cat(r); if(TFILTER_CAT && c!==TFILTER_CAT) return;
     const tk=TICKETS.find(x=>x.id===r.id);
     if(!tkPasseTF(tk)) return;
@@ -1295,8 +1299,9 @@ function netUpdate(){
   NET.edgeEls.forEach(function(l){ l.classList.remove('nlit'); });
   document.getElementById('netCount').textContent=matched.length+' / '+TICKETS.length+' tickets';
   // liste tickets (survol = reseau du ticket)
-  var html=matched.map(function(t){
-    var r=WC.computeTicket(t,P,PAYS,MISE,null);
+  var rows=matched.map(function(t){ return {t:t, r:WC.computeTicket(t,P,PAYS,MISE,null)}; });
+  rows.sort(function(a,b){ return (tkSortKey(a.r)-tkSortKey(b.r)) || (b.r.maxEnCours-a.r.maxEnCours); });
+  var html=rows.map(function(o){ var t=o.t, r=o.r;
     var sels=t.selections.map(function(s){var on=TF.joueurs[eKey(s.joueur,s.pays,s.type)]; var lab=cap(s.joueur)+(s.type==='passeur'?' (P)':''); return on?('<b>'+lab+'</b>'):('<span class="pp">'+lab+'</span>');}).join(' + ');
     return '<div class="ntk" data-tid="'+t.id+'"><div class="ntk-h"><span>'+t.nom+'</span><span class="ntk-max">↑ '+fmt(r.maxEnCours)+'</span><span class="ntk-sys">'+t.systeme+'</span></div><div class="ntk-sels">'+sels+'</div></div>';
   }).join('');

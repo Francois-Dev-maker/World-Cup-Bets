@@ -393,6 +393,8 @@ function segCell(o,neg){
   }
   return "<span class='seg' style='background:"+SEG_COL[o]+"'></span>";
 }
+function tkSortKey(r){ return r.statut==="gagne"?0 : r.virtuel?1 : r.statut==="perdu"?3 : 2; }
+function sortTk(arr){ var a=arr.slice(); a.sort(function(x,y){ return (tkSortKey(x)-tkSortKey(y)) || (y.maxEnCours-x.maxEnCours); }); return a; }
 function segGauge(tk, X){
   var i, cells=[]; for(i=0;i<tk.selections.length;i++){ var s=tk.selections[i]; cells.push({o:outcomeSel(s),neg:negOf(s.joueur,s.pays,s.type)}); }
   cells.sort(function(a,b){ return PRIO[a.o]-PRIO[b.o]; });
@@ -510,7 +512,8 @@ function applyJQ(){ var q=nrm(JQ), c=document.querySelectorAll("#view .pcard"), 
 function renderTickets(R){
   var h="<div class='add-row'><button class='add-tk-btn' onclick=\"openTicketForm()\">+ Ajouter un ticket</button></div>"+paysBar(), i, r, tk;
   h+="<div class='list'>";
-  for(i=0;i<R.tickets.length;i++){ r=R.tickets[i]; tk=null;
+  var ORD=sortTk(R.tickets);
+  for(i=0;i<ORD.length;i++){ r=ORD[i]; tk=null;
     for(var z=0;z<T.length;z++) if(T[z].id===r.id) tk=T[z];
     if(FILTER_PAYS){ var hit=false,q; for(q=0;q<tk.selections.length;q++) if(pKeyN(tk.selections[q].pays)===FILTER_PAYS) hit=true; if(!hit) continue; }
     h+="<div class='tcard "+(r.statut==="perdu"?"dead":"")+"' onclick=\"openSheet('"+r.id+"')\">"+
@@ -760,8 +763,10 @@ function mnetUpdate(){
   }
   for(i=0;i<MNET.edgeEls.length;i++) MNET.edgeEls[i].classList.remove("nlit");
   document.getElementById("mnetCount").textContent=matched.length+" / "+T.length+" tickets";
+  var rows=[]; for(i=0;i<matched.length;i++){ rows.push({t:matched[i], r:WC.computeTicket(matched[i],P,PAYS,MISE,null)}); }
+  rows.sort(function(aa,bb){ return (tkSortKey(aa.r)-tkSortKey(bb.r)) || (bb.r.maxEnCours-aa.r.maxEnCours); });
   var h="", r;
-  for(i=0;i<matched.length;i++){ var tk=matched[i]; r=WC.computeTicket(tk,P,PAYS,MISE,null);
+  for(i=0;i<rows.length;i++){ var tk=rows[i].t; r=rows[i].r;
     var on=MNET.spotTid===tk.id;
     var sels=""; for(j=0;j<tk.selections.length;j++){ var ss=tk.selections[j],sel=TF.joueurs[eKey(ss.joueur,ss.pays,ss.type)]; var lab=cap(ss.joueur)+(ss.type==="passeur"?" (P)":""); sels+=(j?" + ":"")+(sel?"<b>"+lab+"</b>":"<span class='pp'>"+lab+"</span>"); }
     h+="<div class='ntk"+(on?" spoton":"")+"' onclick=\"mnetTapTicket('"+tk.id+"')\"><div class='ntk-h'><span>"+tk.nom+"</span><span class='ntk-max'>\u2191 "+fmt(r.maxEnCours)+"</span><span class='ntk-sys'>"+tk.systeme+"</span></div><div class='ntk-sels'>"+sels+"</div></div>";
